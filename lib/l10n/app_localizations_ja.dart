@@ -159,4 +159,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get credits => 'クレジット';
+
+  @override
+  String get birds => '鳥';
 }

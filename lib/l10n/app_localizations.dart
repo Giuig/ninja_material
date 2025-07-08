@@ -405,6 +405,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Credits'**
   String get credits;
+
+  /// No description provided for @birds.
+  ///
+  /// In en, this message translates to:
+  /// **'Birds'**
+  String get birds;
 }
 
 class _AppLocalizationsDelegate
