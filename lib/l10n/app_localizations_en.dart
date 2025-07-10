@@ -118,49 +118,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get version => 'Version';
-
-  @override
-  String get sounds => 'Sounds';
-
-  @override
-  String get nature => 'Nature';
-
-  @override
-  String get rain => 'Rain';
-
-  @override
-  String get wind => 'Wind';
-
-  @override
-  String get waves => 'Waves';
-
-  @override
-  String get fire => 'Fire';
-
-  @override
-  String get binaural => 'Binaural';
-
-  @override
-  String get creativeFlow => 'Creative Flow';
-
-  @override
-  String get deepCalm => 'Deep Calm';
-
-  @override
-  String get deepSleep => 'Deep Sleep';
-
-  @override
-  String get laserFocus => 'Laser Focus';
-
-  @override
-  String get theDeepestSleep => 'The Deepest Sleep';
-
-  @override
-  String get zenCalm => 'Zen Calm';
-
-  @override
-  String get credits => 'Credits';
-
-  @override
-  String get birds => 'Birds';
 }

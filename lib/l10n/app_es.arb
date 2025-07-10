@@ -34,20 +34,5 @@
     "resetCountDescription": "Al continuar, restablecerás las estadísticas de tus decisiones. ¿Quieres continuar?",
     "cancel": "Cancelar",
     "reset": "Restablecer",
-    "version": "Versión",
-    "sounds": "Sonidos",
-    "nature": "Naturaleza",
-    "rain": "Lluvia",
-    "wind": "Viento",
-    "waves": "Olas",
-    "fire": "Fuego",
-    "binaural": "Binaural",
-    "creativeFlow": "Flujo Creativo",
-    "deepCalm": "Calma Profunda",
-    "deepSleep": "Sueño Profundo",
-    "laserFocus": "Concentración",
-    "theDeepestSleep": "El Sueño Más Profundo",
-    "zenCalm": "Calma Zen",
-    "credits": "Créditos",
-    "birds": "Aves"
+    "version": "Versión"
 }

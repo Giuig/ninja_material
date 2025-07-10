@@ -36,20 +36,5 @@
   "resetCountDescription": "This will reset the stats of your decisions. Do you want to proceed?",
   "cancel": "Cancel",
   "reset": "Reset",
-  "version": "Version",
-  "sounds": "Sounds",
-  "nature": "Nature",
-  "rain": "Rain",
-  "wind": "Wind",
-  "waves": "Waves",
-  "fire": "Fire",
-  "binaural": "Binaural",
-  "creativeFlow": "Creative Flow",
-  "deepCalm": "Deep Calm",
-  "deepSleep": "Deep Sleep",
-  "laserFocus": "Laser Focus",
-  "theDeepestSleep": "The Deepest Sleep",
-  "zenCalm": "Zen Calm",
-  "credits": "Credits",
-  "birds": "Birds"
+  "version": "Version"
 }

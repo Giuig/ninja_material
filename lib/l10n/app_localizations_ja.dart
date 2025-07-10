@@ -117,49 +117,4 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get version => 'バージョン';
-
-  @override
-  String get sounds => 'サウンド';
-
-  @override
-  String get nature => '自然';
-
-  @override
-  String get rain => '雨';
-
-  @override
-  String get wind => '風';
-
-  @override
-  String get waves => '波';
-
-  @override
-  String get fire => '火';
-
-  @override
-  String get binaural => 'バイノーラル';
-
-  @override
-  String get creativeFlow => 'クリエイティブな流れ';
-
-  @override
-  String get deepCalm => '深い静けさ';
-
-  @override
-  String get deepSleep => '深い眠り';
-
-  @override
-  String get laserFocus => '集中';
-
-  @override
-  String get theDeepestSleep => '最も深い眠り';
-
-  @override
-  String get zenCalm => '禅の静けさ';
-
-  @override
-  String get credits => 'クレジット';
-
-  @override
-  String get birds => '鳥';
 }
