@@ -40,16 +40,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 Navigator.of(context).pop();
               },
             ),
-/*             TextButton(
-              child: Text(
-                AppLocalizations.of(context)!.reset,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              onPressed: () {
-                globalResetData();
-                Navigator.of(context).pop();
-              },
-            ), */
           ],
         );
       },
@@ -134,7 +124,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
                       style: TextStyle(
                         fontSize: 12.0,
-                        // ignore: deprecated_member_use
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
@@ -142,7 +131,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       ", Made with ",
                       style: TextStyle(
                         fontSize: 12.0,
-                        // ignore: deprecated_member_use
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
@@ -157,7 +145,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   "Version: $globalVersion",
                   style: TextStyle(
                     fontSize: 12.0,
-                    // ignore: deprecated_member_use
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
