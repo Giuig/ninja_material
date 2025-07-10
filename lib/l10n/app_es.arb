@@ -34,5 +34,6 @@
     "resetCountDescription": "Al continuar, restablecerás las estadísticas de tus decisiones. ¿Quieres continuar?",
     "cancel": "Cancelar",
     "reset": "Restablecer",
-    "version": "Versión"
+    "version": "Versión",
+    "darkTheme": "Tema Oscuro"
 }

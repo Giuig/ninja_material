@@ -67,10 +67,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   static final _defaultLightColorScheme = ColorScheme.fromSeed(
-      seedColor: Colors.black, brightness: Brightness.light);
+      seedColor: Colors.blue, brightness: Brightness.light);
 
-  static final _defaultDarkColorScheme = ColorScheme.fromSeed(
-      seedColor: Colors.black, brightness: Brightness.dark);
+  static final _defaultDarkColorScheme =
+      ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark);
 
   @override
   Widget build(BuildContext context) {

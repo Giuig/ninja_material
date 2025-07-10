@@ -36,5 +36,6 @@
   "resetCountDescription": "This will reset the stats of your decisions. Do you want to proceed?",
   "cancel": "Cancel",
   "reset": "Reset",
-  "version": "Version"
+  "version": "Version",
+  "darkTheme": "Dark Theme"
 }

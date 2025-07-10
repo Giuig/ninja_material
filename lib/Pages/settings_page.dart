@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:ninja_material/theme/theme_notifier.dart';
 import 'package:ninja_material/utils/svg_util.dart';
 
 import '../config/shared_config.dart';
@@ -18,7 +19,14 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final List<Locale> _localeOptions = L10n.all;
 
-  bool _changeTheme = false;
+  late bool _darkTheme;
+
+  @override
+  void initState() {
+    super.initState();
+    _darkTheme = ThemeNotifier.isDark ?? false;
+  }
+
   Future<void> _showClearDataDialog() async {
     return showDialog<void>(
       context: context,
@@ -56,11 +64,11 @@ class _SettingsPageState extends State<SettingsPage> {
             child: ListView(
               children: <Widget>[
                 SwitchListTile(
-                  title: Text(AppLocalizations.of(context)!.changeTheme),
-                  value: _changeTheme,
+                  title: Text(AppLocalizations.of(context)!.darkTheme),
+                  value: _darkTheme,
                   onChanged: (value) {
                     setState(() {
-                      _changeTheme = value;
+                      _darkTheme = value;
                       globalCurrentTheme.switchTheme();
                     });
                   },

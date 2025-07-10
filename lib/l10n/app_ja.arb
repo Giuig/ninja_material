@@ -34,5 +34,6 @@
     "resetCountDescription": "続行すると、あなたの意思決定の統計がリセットされます。続行しますか？",
     "cancel": "キャンセル",
     "reset": "リセット",
-    "version": "バージョン"
+    "version": "バージョン",
+    "darkTheme": "ダークテーマ"
 }

@@ -1,1 +1,21 @@
-{}
+{
+  "de": [
+    "darkTheme"
+  ],
+
+  "es": [
+    "darkTheme"
+  ],
+
+  "fr": [
+    "darkTheme"
+  ],
+
+  "it": [
+    "darkTheme"
+  ],
+
+  "ja": [
+    "darkTheme"
+  ]
+}
