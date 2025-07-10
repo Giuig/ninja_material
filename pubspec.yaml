@@ -34,5 +34,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  fonts:
+  - family: The Hand
+    fonts:
+      - asset: assets/fonts/The Hand Regular.otf
+
   uses-material-design: true
   generate: true
