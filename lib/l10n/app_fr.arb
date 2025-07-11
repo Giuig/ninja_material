@@ -34,5 +34,6 @@
     "resetCountDescription": "En procédant, vous réinitialiserez les statistiques de vos décisions. Voulez-vous continuer?",
     "cancel": "Annuler",
     "reset": "Réinitialiser",
-    "version": "Version"
+    "version": "Version",
+    "darkTheme": "Thème Sombre"
 }

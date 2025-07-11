@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ninja_material/Pages/first_page.dart';
+import 'package:ninja_material/pages/first_page.dart';
 import 'package:ninja_material/l10n/app_localizations.dart';
 
 import 'home_page.dart';

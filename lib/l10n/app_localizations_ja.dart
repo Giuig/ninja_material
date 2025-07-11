@@ -117,4 +117,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get version => 'バージョン';
+
+  @override
+  String get darkTheme => 'ダークテーマ';
 }
