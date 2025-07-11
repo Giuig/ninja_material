@@ -120,5 +120,5 @@ class AppLocalizationsDe extends AppLocalizations {
   String get version => 'Version';
 
   @override
-  String get darkTheme => 'Dark Theme';
+  String get darkTheme => 'Dunkles Design';
 }

@@ -120,5 +120,5 @@ class AppLocalizationsFr extends AppLocalizations {
   String get version => 'Version';
 
   @override
-  String get darkTheme => 'Dark Theme';
+  String get darkTheme => 'Thème Sombre';
 }
