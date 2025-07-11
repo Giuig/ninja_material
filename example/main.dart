@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:ninja_material/config/shared_config.dart';
 import 'package:ninja_material/l10n/l10n.dart';
-import 'package:ninja_material/pages/first_page.dart';
+import 'package:ninja_material/pages_temp/first_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
