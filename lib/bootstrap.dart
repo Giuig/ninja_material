@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:ninja_material/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -14,7 +15,7 @@ import 'pages/first_page.dart';
 
 Future<void> runNinjaApp(
     {required Color defaultSeedColor,
-    required LocalizationsDelegate<dynamic> localizationDelegate,
+    required LocalizationsDelegate<dynamic> specificLocalizationDelegate,
     required String packageName,
     required FirstPageConfig appFirstPageConfig}) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,19 +41,19 @@ Future<void> runNinjaApp(
 
   runApp(_NinjaApp(
     defaultSeedColor: defaultSeedColor,
-    localizationDelegate: localizationDelegate,
+    specificLocalizationDelegate: specificLocalizationDelegate,
     appFirstPageConfig: appFirstPageConfig,
   ));
 }
 
 class _NinjaApp extends StatefulWidget {
   final Color defaultSeedColor;
-  final LocalizationsDelegate<dynamic> localizationDelegate;
+  final LocalizationsDelegate<dynamic> specificLocalizationDelegate;
   final FirstPageConfig appFirstPageConfig;
 
   const _NinjaApp({
     required this.defaultSeedColor,
-    required this.localizationDelegate,
+    required this.specificLocalizationDelegate,
     required this.appFirstPageConfig,
   });
 
@@ -98,7 +99,8 @@ class _NinjaAppState extends State<_NinjaApp> {
           supportedLocales: L10n.all,
           locale: globalCurrentLocale.currentLocale(context),
           localizationsDelegates: [
-            widget.localizationDelegate,
+            widget.specificLocalizationDelegate,
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
