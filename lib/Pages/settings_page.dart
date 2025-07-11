@@ -19,32 +19,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final List<Locale> _localeOptions = L10n.all;
 
   bool _changeTheme = false;
-  Future<void> _showClearDataDialog() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.areYouSure),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(AppLocalizations.of(context)!.resetCountDescription),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text(AppLocalizations.of(context)!.cancel),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,28 +63,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
-          globalAppName?.toLowerCase() == 'decisioninja'
-              ? Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Wrap(
-                    children: <Widget>[
-                      ElevatedButton(
-                        onPressed: _showClearDataDialog,
-                        child: Text(
-                          AppLocalizations.of(context)!.resetCount,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.errorContainer,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : SizedBox.shrink(),
           Container(
             alignment: Alignment.center,
             padding: EdgeInsets.all(15.0),
@@ -142,7 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 Text(
-                  "Version: $globalVersion",
+                  "Version: $globalVersion ($globalBuildNumber)",
                   style: TextStyle(
                     fontSize: 12.0,
                     color: Theme.of(context).colorScheme.onSurface,

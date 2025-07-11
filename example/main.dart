@@ -31,10 +31,10 @@ void main() async {
   String buildNumber = packageInfo.buildNumber;
 
   inspect(packageName);
-  inspect(buildNumber);
 
   globalAppName = appName;
   globalVersion = version;
+  globalBuildNumber = buildNumber;
 
   final style = SystemUiOverlayStyle(
     systemNavigationBarColor: const Color.fromARGB(0, 255, 153, 0),

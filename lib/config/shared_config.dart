@@ -8,6 +8,7 @@ LocaleNotifier globalCurrentLocale = LocaleNotifier();
 
 String? globalAppName;
 String? globalVersion;
+String? globalBuildNumber;
 
 String globalCurrentYear = getCurrentYear();
 
