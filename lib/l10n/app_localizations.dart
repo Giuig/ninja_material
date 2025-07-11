@@ -106,173 +106,17 @@ abstract class AppLocalizations {
     Locale('ja')
   ];
 
-  /// No description provided for @welcomeToDecisioninja.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome to Decisioninja!'**
-  String get welcomeToDecisioninja;
-
-  /// No description provided for @welcomeToAuraninja.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome to Auraninja!'**
-  String get welcomeToAuraninja;
-
-  /// No description provided for @statsDisplayedHere.
-  ///
-  /// In en, this message translates to:
-  /// **'Your stats will be displayed here'**
-  String get statsDisplayedHere;
-
-  /// No description provided for @decisionsMadeSoFar.
-  ///
-  /// In en, this message translates to:
-  /// **'Decisions made so far:'**
-  String get decisionsMadeSoFar;
-
   /// No description provided for @home.
   ///
   /// In en, this message translates to:
   /// **'Home'**
   String get home;
 
-  /// No description provided for @leftRight.
-  ///
-  /// In en, this message translates to:
-  /// **'Left/Right'**
-  String get leftRight;
-
-  /// No description provided for @dice.
-  ///
-  /// In en, this message translates to:
-  /// **'Dice'**
-  String get dice;
-
-  /// No description provided for @pointer.
-  ///
-  /// In en, this message translates to:
-  /// **'Pointer'**
-  String get pointer;
-
-  /// No description provided for @ninja.
-  ///
-  /// In en, this message translates to:
-  /// **'Ninja'**
-  String get ninja;
-
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
   /// **'Settings'**
   String get settings;
-
-  /// No description provided for @chooseLeftRight.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose left or right!'**
-  String get chooseLeftRight;
-
-  /// No description provided for @choosing.
-  ///
-  /// In en, this message translates to:
-  /// **'Choosing...'**
-  String get choosing;
-
-  /// No description provided for @theResultIs.
-  ///
-  /// In en, this message translates to:
-  /// **'The result is: {result}'**
-  String theResultIs(Object result);
-
-  /// No description provided for @left.
-  ///
-  /// In en, this message translates to:
-  /// **'left'**
-  String get left;
-
-  /// No description provided for @right.
-  ///
-  /// In en, this message translates to:
-  /// **'right'**
-  String get right;
-
-  /// No description provided for @throwDie.
-  ///
-  /// In en, this message translates to:
-  /// **'Throw the die!'**
-  String get throwDie;
-
-  /// No description provided for @throwDice.
-  ///
-  /// In en, this message translates to:
-  /// **'Throw the dice!'**
-  String get throwDice;
-
-  /// No description provided for @throwing.
-  ///
-  /// In en, this message translates to:
-  /// **'Throwing...'**
-  String get throwing;
-
-  /// No description provided for @totalScore.
-  ///
-  /// In en, this message translates to:
-  /// **'Total score: '**
-  String get totalScore;
-
-  /// No description provided for @pointArrow.
-  ///
-  /// In en, this message translates to:
-  /// **'Point the arrow!'**
-  String get pointArrow;
-
-  /// No description provided for @pointing.
-  ///
-  /// In en, this message translates to:
-  /// **'Pointing...'**
-  String get pointing;
-
-  /// No description provided for @arrowResult.
-  ///
-  /// In en, this message translates to:
-  /// **'The result is: there'**
-  String get arrowResult;
-
-  /// No description provided for @addFirstNinja.
-  ///
-  /// In en, this message translates to:
-  /// **'Add options first!'**
-  String get addFirstNinja;
-
-  /// No description provided for @createNinja.
-  ///
-  /// In en, this message translates to:
-  /// **'Create Option'**
-  String get createNinja;
-
-  /// No description provided for @chooseNinja.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose the option!'**
-  String get chooseNinja;
-
-  /// No description provided for @nameNinja.
-  ///
-  /// In en, this message translates to:
-  /// **'Option Name'**
-  String get nameNinja;
-
-  /// No description provided for @chosenNinja.
-  ///
-  /// In en, this message translates to:
-  /// **'Chosen option: '**
-  String get chosenNinja;
-
-  /// No description provided for @removeNinja.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove Option'**
-  String get removeNinja;
 
   /// No description provided for @changeTheme.
   ///
@@ -286,47 +130,11 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get language;
 
-  /// No description provided for @resetCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset stats'**
-  String get resetCount;
-
-  /// No description provided for @areYouSure.
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure?'**
-  String get areYouSure;
-
-  /// No description provided for @resetCountDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'This will reset the stats of your decisions. Do you want to proceed?'**
-  String get resetCountDescription;
-
-  /// No description provided for @cancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get cancel;
-
-  /// No description provided for @reset.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset'**
-  String get reset;
-
   /// No description provided for @version.
   ///
   /// In en, this message translates to:
   /// **'Version'**
   String get version;
-
-  /// No description provided for @darkTheme.
-  ///
-  /// In en, this message translates to:
-  /// **'Dark Theme'**
-  String get darkTheme;
 }
 
 class _AppLocalizationsDelegate
