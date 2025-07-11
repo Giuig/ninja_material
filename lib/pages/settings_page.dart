@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:ninja_material/utils/svg_util.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/shared_config.dart';
 import '../l10n/app_localizations.dart';
@@ -67,8 +68,23 @@ class _SettingsPageState extends State<SettingsPage> {
             alignment: Alignment.center,
             padding: EdgeInsets.all(15.0),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                GestureDetector(
+                  onTap: () async {
+                    final Uri url = Uri.parse('https://ko-fi.com/ninjapp');
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url,
+                          mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  child: Image.network(
+                    'https://storage.ko-fi.com/cdn/kofi5.png',
+                    height: 45,
+                  ),
+                ),
+                SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
