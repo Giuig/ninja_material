@@ -13,19 +13,24 @@ import 'config/shared_config.dart';
 import 'l10n/l10n.dart';
 import 'pages/first_page.dart';
 
-Future<void> runNinjaApp(
-    {required Color defaultSeedColor,
-    required LocalizationsDelegate<dynamic> specificLocalizationDelegate,
-    required String packageName,
-    required FirstPageConfig appFirstPageConfig}) async {
+Future<void> runNinjaApp({
+  required Color defaultSeedColor,
+  required LocalizationsDelegate<dynamic> specificLocalizationDelegate,
+  required String packageName,
+  required FirstPageConfig appFirstPageConfig,
+  List<Future<void> Function()> additionalFunctions = const [],
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  for (final function in additionalFunctions) {
+    await function();
+  }
 
   if (!kIsWeb) {
     MobileAds.instance.initialize();
   }
 
   final info = await PackageInfo.fromPlatform();
-
   globalAppName = info.appName;
   globalVersion = info.version;
   globalBuildNumber = info.buildNumber;
