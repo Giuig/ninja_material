@@ -3,5 +3,11 @@
     "settings": "Impostaz.",
     "changeTheme": "Cambia tema",
     "language": "Lingua",
-    "version": "Versione"
+    "version": "Versione",
+    "themeMode": "Modalità tema",
+    "systemTheme": "Tema di sistema",
+    "lightTheme": "Tema chiaro",
+    "darkTheme": "Tema scuro",
+    "useMaterialYou": "Usa Material You",
+    "themeAccent": "Colore del tema"
 }
