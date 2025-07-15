@@ -1,13 +1,11 @@
-// lib/pages/settings_page.dart
-
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:ninja_material/utils/svg_util.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:dynamic_color/dynamic_color.dart';
+// dynamic_color import is no longer needed here as the check is externalized
+// import 'package:dynamic_color/dynamic_color.dart'; // REMOVED
 
-import '../config/shared_config.dart';
+import '../config/shared_config.dart'; // This now provides supportsDynamicColor
 import '../l10n/app_localizations.dart';
 import '../l10n/l10n.dart';
 
@@ -28,7 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   ThemeMode _selectedThemeMode = ThemeMode.system;
   bool _useMaterialYou = false;
-  bool _supportsDynamicColor = false;
+  // bool _supportsDynamicColor = false; // REMOVED: No longer a state variable here
   Color _selectedAccentColor = Colors.blue.shade500;
 
   @override
@@ -36,7 +34,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
 
     _updateSettingsState();
-    _checkDynamicColorSupport();
+    // _checkDynamicColorSupport(); // REMOVED: Check is now done in bootstrap.dart
 
     globalCurrentTheme.addListener(_updateSettingsState);
   }
@@ -58,17 +56,19 @@ class _SettingsPageState extends State<SettingsPage> {
           globalThemeColorOptions.containsValue(currentCustomColor)) {
         _selectedAccentColor = currentCustomColor;
       } else {
-        _selectedAccentColor = globalThemeColorOptions['Default']!;
+        // Ensure 'Default' key exists or handle its absence
+        _selectedAccentColor =
+            globalThemeColorOptions['Default'] ?? Colors.blue.shade500;
       }
     });
   }
 
-  Future<void> _checkDynamicColorSupport() async {
-    final dynamic corePalette = await DynamicColorPlugin.getCorePalette();
-    setState(() {
-      _supportsDynamicColor = corePalette != null;
-    });
-  }
+  // Future<void> _checkDynamicColorSupport() async { // REMOVED: Check is now done in bootstrap.dart
+  //   final dynamic corePalette = await DynamicColorPlugin.getCorePalette();
+  //   setState(() {
+  //     _supportsDynamicColor = corePalette != null;
+  //   });
+  // }
 
   String _getThemeModeName(BuildContext context, ThemeMode mode) {
     switch (mode) {
@@ -118,7 +118,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
-                if (_supportsDynamicColor)
+                // Access dynamic color support directly from globalCurrentTheme
+                if (globalCurrentTheme
+                    .supportsDynamicColor) // Use the value from ThemeNotifier
                   SwitchListTile(
                     title: Text(AppLocalizations.of(context)!.useMaterialYou),
                     value: _useMaterialYou,
@@ -179,7 +181,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           Container(
             alignment: Alignment.center,
-            padding: EdgeInsets.all(15.0),
+            padding: const EdgeInsets.all(15.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -197,7 +199,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     height: 45,
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[

@@ -1,15 +1,13 @@
-// lib/bootstrap.dart
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ninja_material/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:dynamic_color/dynamic_color.dart';
+import 'package:dynamic_color/dynamic_color.dart'; // Keep this import
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'config/shared_config.dart';
+import 'config/shared_config.dart'; // This needs to be able to store supportsDynamicColor
 import 'l10n/l10n.dart';
 import 'pages/first_page.dart';
 
@@ -21,8 +19,23 @@ Future<void> runNinjaApp({
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize theme and locale managers early
   await globalCurrentTheme.init();
   await globalCurrentLocale.init();
+
+  // --- ADD DYNAMIC COLOR LOGIC HERE ---
+  bool supportsDynamicColor = false;
+  try {
+    final corePalette = await DynamicColorPlugin.getCorePalette();
+    supportsDynamicColor = corePalette != null;
+  } catch (e) {
+    // Handle error if DynamicColorPlugin fails (e.g., on unsupported platforms or during testing)
+    debugPrint('DynamicColorPlugin.getCorePalette() failed: $e');
+    supportsDynamicColor = false;
+  }
+  // Store the result in your global theme manager BEFORE runApp
+  globalCurrentTheme.setSupportsDynamicColor(supportsDynamicColor);
+  // --- END DYNAMIC COLOR LOGIC ---
 
   for (final function in additionalFunctions) {
     await function();
@@ -80,8 +93,17 @@ class _NinjaAppState extends State<_NinjaApp> {
   @override
   void initState() {
     super.initState();
+    // Listen to globalCurrentTheme for changes that might affect UI (like theme mode, material you)
     globalCurrentTheme.addListener(() => setState(() {}));
+    // Listen to globalCurrentLocale for locale changes
     globalCurrentLocale.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    globalCurrentTheme.removeListener(() => setState(() {}));
+    globalCurrentLocale.removeListener(() => setState(() {}));
+    super.dispose();
   }
 
   @override
@@ -98,7 +120,10 @@ class _NinjaAppState extends State<_NinjaApp> {
           effectiveSeedColor = globalCurrentTheme.customAccentColor!;
         }
 
-        if (globalCurrentTheme.useMaterialYou &&
+        // Conditionally use dynamic colors if supported AND enabled by user
+        if (globalCurrentTheme
+                .supportsDynamicColor && // Check if platform supports it
+            globalCurrentTheme.useMaterialYou && // Check if user enabled it
             lightColorScheme != null &&
             darkColorScheme != null) {
           light = lightColorScheme;
@@ -115,6 +140,8 @@ class _NinjaAppState extends State<_NinjaApp> {
         }
 
         return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          themeMode: globalCurrentTheme.currentTheme(context),
           theme: ThemeData(
             colorScheme: light,
             useMaterial3: true,
@@ -123,7 +150,6 @@ class _NinjaAppState extends State<_NinjaApp> {
             colorScheme: dark,
             useMaterial3: true,
           ),
-          themeMode: globalCurrentTheme.currentTheme(context),
           supportedLocales: L10n.all,
           locale: globalCurrentLocale.currentLocale(context),
           localizationsDelegates: [

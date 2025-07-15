@@ -1,4 +1,4 @@
-// lib/services/theme_notifier.dart
+// lib/theme/theme_notifier.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +9,7 @@ class ThemeNotifier with ChangeNotifier {
   static ThemeMode? _themeMode;
   static bool? _useMaterialYou;
   static Color? _customAccentColor;
+  static bool _supportsDynamicColor = false; // NEW: To store platform support
 
   ThemeNotifier();
 
@@ -30,6 +31,18 @@ class ThemeNotifier with ChangeNotifier {
     int? savedAccentColorValue = preferences.getInt('customAccentColor');
     if (savedAccentColorValue != null) {
       _customAccentColor = Color(savedAccentColorValue);
+    }
+  }
+
+  // NEW: Getter for dynamic color support
+  bool get supportsDynamicColor => _supportsDynamicColor;
+
+  // NEW: Setter for dynamic color support, called from bootstrap.dart
+  void setSupportsDynamicColor(bool value) {
+    if (_supportsDynamicColor != value) {
+      _supportsDynamicColor = value;
+      // No notifyListeners here, as this is usually set once at app startup
+      // and doesn't change during runtime based on user interaction.
     }
   }
 
