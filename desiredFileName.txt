@@ -1,1 +1,46 @@
-{}
+{
+  "de": [
+    "themeMode",
+    "systemTheme",
+    "lightTheme",
+    "darkTheme",
+    "useMaterialYou",
+    "themeAccent"
+  ],
+
+  "es": [
+    "themeMode",
+    "systemTheme",
+    "lightTheme",
+    "darkTheme",
+    "useMaterialYou",
+    "themeAccent"
+  ],
+
+  "fr": [
+    "themeMode",
+    "systemTheme",
+    "lightTheme",
+    "darkTheme",
+    "useMaterialYou",
+    "themeAccent"
+  ],
+
+  "it": [
+    "themeMode",
+    "systemTheme",
+    "lightTheme",
+    "darkTheme",
+    "useMaterialYou",
+    "themeAccent"
+  ],
+
+  "ja": [
+    "themeMode",
+    "systemTheme",
+    "lightTheme",
+    "darkTheme",
+    "useMaterialYou",
+    "themeAccent"
+  ]
+}

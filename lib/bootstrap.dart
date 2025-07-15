@@ -16,7 +16,8 @@ import 'pages/first_page.dart';
 Future<void> runNinjaApp({
   required Color defaultSeedColor,
   required LocalizationsDelegate<dynamic> specificLocalizationDelegate,
-  required String packageName,
+  // Removed packageName as it's not used in this function's parameters directly.
+  // It's fetched internally via PackageInfo.fromPlatform().
   required FirstPageConfig appFirstPageConfig,
   List<Future<void> Function()> additionalFunctions = const [],
 }) async {
@@ -57,6 +58,7 @@ class _NinjaApp extends StatefulWidget {
   final FirstPageConfig appFirstPageConfig;
 
   const _NinjaApp({
+    super.key,
     required this.defaultSeedColor,
     required this.specificLocalizationDelegate,
     required this.appFirstPageConfig,
@@ -76,30 +78,55 @@ class _NinjaAppState extends State<_NinjaApp> {
 
   @override
   Widget build(BuildContext context) {
-    final defaultLight = ColorScheme.fromSeed(
-      seedColor: widget.defaultSeedColor,
-      brightness: Brightness.light,
-    );
-    final defaultDark = ColorScheme.fromSeed(
-      seedColor: widget.defaultSeedColor,
-      brightness: Brightness.dark,
-    );
-
     return DynamicColorBuilder(
       builder: (lightColorScheme, darkColorScheme) {
-        final light = ColorScheme.fromSeed(
-          seedColor: lightColorScheme?.primary ?? defaultLight.primary,
-          brightness: Brightness.light,
-        );
+        ColorScheme light;
+        ColorScheme dark;
 
-        final dark = ColorScheme.fromSeed(
-          seedColor: darkColorScheme?.primary ?? defaultDark.primary,
-          brightness: Brightness.dark,
-        );
+        // **This is the critical part.**
+        // Determine the seed color based on:
+        // 1. Material You preference.
+        // 2. User's custom selected accent color.
+        // 3. App's default seed color (if no custom accent or Material You).
+        Color effectiveSeedColor =
+            widget.defaultSeedColor; // Start with the app's initial default
+
+        // If Material You is NOT enabled, and a custom accent color IS set, use it.
+        // This ensures your selection from SettingsPage takes precedence.
+        if (!globalCurrentTheme.useMaterialYou &&
+            globalCurrentTheme.customAccentColor != null) {
+          effectiveSeedColor = globalCurrentTheme.customAccentColor!;
+        }
+
+        // Apply Material You provided colors if enabled AND available
+        if (globalCurrentTheme.useMaterialYou &&
+            lightColorScheme != null &&
+            darkColorScheme != null) {
+          light = lightColorScheme; // Use dynamic colors directly
+          dark = darkColorScheme; // Use dynamic colors directly
+        } else {
+          // Otherwise, generate ColorSchemes using our calculated effectiveSeedColor
+          // This ensures customAccentColor is used when Material You is off.
+          light = ColorScheme.fromSeed(
+            seedColor: effectiveSeedColor, // Use the effective seed color
+            brightness: Brightness.light,
+          );
+          dark = ColorScheme.fromSeed(
+            seedColor: effectiveSeedColor, // Use the effective seed color
+            brightness: Brightness.dark,
+          );
+        }
 
         return MaterialApp(
-          theme: ThemeData(colorScheme: light, useMaterial3: true),
-          darkTheme: ThemeData(colorScheme: dark, useMaterial3: true),
+          theme: ThemeData(
+            colorScheme: light,
+            useMaterial3:
+                true, // Re-added Material 3 setting, highly recommended
+          ),
+          darkTheme: ThemeData(
+            colorScheme: dark,
+            useMaterial3: true, // Re-added Material 3 setting
+          ),
           themeMode: globalCurrentTheme.currentTheme(context),
           supportedLocales: L10n.all,
           locale: globalCurrentLocale.currentLocale(context),
