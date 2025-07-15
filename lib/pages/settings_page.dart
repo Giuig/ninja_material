@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, library_private_types_in_public_api, prefer_const_literals_to_create_immutables, sort_child_properties_last
+// lib/pages/settings_page.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -26,32 +26,17 @@ class _SettingsPageState extends State<SettingsPage> {
     ThemeMode.dark,
   ];
 
-  // Map for theme color options - using specific shades for uniqueness
-  late final Map<String, Color> _themeColorOptions;
-
   ThemeMode _selectedThemeMode = ThemeMode.system;
   bool _useMaterialYou = false;
   bool _supportsDynamicColor = false;
-  Color _selectedAccentColor =
-      Colors.blue.shade500; // Default to a specific shade
+  Color _selectedAccentColor = Colors.blue.shade500;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize theme color options with unique Color instances (using .shade500)
-    _themeColorOptions = {
-      'Default': Colors.indigo.shade500, // A distinct default color
-      'Ditto': Colors.purple.shade500,
-      'Charmander': Colors.red.shade500,
-      'Squirtle': Colors.blue.shade500,
-      'Bulbasaur': Colors.green.shade500,
-      'Pikachu': Colors.yellow.shade500,
-    };
-
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      _updateSettingsState(); // Initial state update after build context is ready
-    });
+    _updateSettingsState();
+    _checkDynamicColorSupport();
 
     globalCurrentTheme.addListener(_updateSettingsState);
   }
@@ -67,16 +52,13 @@ class _SettingsPageState extends State<SettingsPage> {
       _selectedThemeMode = globalCurrentTheme.getStoredThemeMode();
       _useMaterialYou = globalCurrentTheme.useMaterialYou;
 
-      // Update selected accent color from global state.
       Color? currentCustomColor = globalCurrentTheme.customAccentColor;
 
-      // If a custom color is saved AND it exists in our predefined options, use it.
-      // Otherwise, fall back to the 'Default' color defined in _themeColorOptions.
       if (currentCustomColor != null &&
-          _themeColorOptions.containsValue(currentCustomColor)) {
+          globalThemeColorOptions.containsValue(currentCustomColor)) {
         _selectedAccentColor = currentCustomColor;
       } else {
-        _selectedAccentColor = _themeColorOptions['Default']!;
+        _selectedAccentColor = globalThemeColorOptions['Default']!;
       }
     });
   }
@@ -88,7 +70,6 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  // Helper to get localized theme mode name
   String _getThemeModeName(BuildContext context, ThemeMode mode) {
     switch (mode) {
       case ThemeMode.system:
@@ -100,11 +81,11 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // Helper to get the key (name) for a given color from the map
   String _getAccentColorName(Color color) {
-    return _themeColorOptions.entries
+    return globalThemeColorOptions.entries
         .firstWhere((entry) => entry.value == color,
-            orElse: () => MapEntry('Default', Colors.indigo.shade500))
+            orElse: () =>
+                MapEntry('Default', globalThemeColorOptions['Default']!))
         .key;
   }
 
@@ -117,7 +98,6 @@ class _SettingsPageState extends State<SettingsPage> {
           Expanded(
             child: ListView(
               children: <Widget>[
-                // Theme Mode Dropdown
                 ListTile(
                   title: Text(AppLocalizations.of(context)!.themeMode),
                   trailing: DropdownButtonHideUnderline(
@@ -138,7 +118,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
-
                 if (_supportsDynamicColor)
                   SwitchListTile(
                     title: Text(AppLocalizations.of(context)!.useMaterialYou),
@@ -150,14 +129,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       });
                     },
                   ),
-
-                // Theme Accent Color Dropdown (without colored circles)
                 ListTile(
                   title: Text(AppLocalizations.of(context)!.themeAccent),
                   trailing: DropdownButtonHideUnderline(
                     child: DropdownButton<Color>(
                       value: _selectedAccentColor,
-                      // Disable if Material You is enabled
                       onChanged: _useMaterialYou
                           ? null
                           : (Color? newValue) {
@@ -166,19 +142,17 @@ class _SettingsPageState extends State<SettingsPage> {
                                     .setCustomAccentColor(newValue);
                               }
                             },
-                      items: _themeColorOptions.entries
+                      items: globalThemeColorOptions.entries
                           .map<DropdownMenuItem<Color>>(
                               (MapEntry<String, Color> entry) {
                         return DropdownMenuItem<Color>(
                           value: entry.value,
-                          // Removed Row with Container for colored circle
                           child: Text(entry.key),
                         );
                       }).toList(),
                     ),
                   ),
                 ),
-
                 ListTile(
                   title: Text(AppLocalizations.of(context)!.language),
                   trailing: DropdownButtonHideUnderline(
@@ -228,7 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
+                      "© ${globalCurrentYear} ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
                       style: TextStyle(
                         fontSize: 12.0,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -249,7 +223,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 Text(
-                  "Version: $globalVersion ($globalBuildNumber)",
+                  "Version: ${globalVersion} (${globalBuildNumber})",
                   style: TextStyle(
                     fontSize: 12.0,
                     color: Theme.of(context).colorScheme.onSurface,

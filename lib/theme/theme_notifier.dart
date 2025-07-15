@@ -1,3 +1,5 @@
+// lib/services/theme_notifier.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,11 +8,12 @@ import 'package:flutter/scheduler.dart';
 class ThemeNotifier with ChangeNotifier {
   static ThemeMode? _themeMode;
   static bool? _useMaterialYou;
-  static Color?
-      _customAccentColor; // New: Static variable for custom accent color
+  static Color? _customAccentColor;
 
-  ThemeNotifier() {
-    _loadSavedTheme();
+  ThemeNotifier();
+
+  Future<void> init() async {
+    await _loadSavedTheme();
   }
 
   Future<void> _loadSavedTheme() async {
@@ -24,13 +27,10 @@ class ThemeNotifier with ChangeNotifier {
     }
     _useMaterialYou = preferences.getBool('useMaterialYou');
 
-    // New: Load custom accent color
     int? savedAccentColorValue = preferences.getInt('customAccentColor');
     if (savedAccentColorValue != null) {
       _customAccentColor = Color(savedAccentColorValue);
     }
-
-    notifyListeners();
   }
 
   ThemeMode currentTheme(BuildContext context) {
@@ -50,7 +50,6 @@ class ThemeNotifier with ChangeNotifier {
 
   bool get useMaterialYou => _useMaterialYou ?? false;
 
-  // New: Getter for custom accent color
   Color? get customAccentColor => _customAccentColor;
 
   void setThemeMode(ThemeMode mode) {
@@ -70,7 +69,6 @@ class ThemeNotifier with ChangeNotifier {
     }
   }
 
-  // New: Method to set and save custom accent color
   void setCustomAccentColor(Color color) {
     if (_customAccentColor != color) {
       _customAccentColor = color;
@@ -89,11 +87,9 @@ class ThemeNotifier with ChangeNotifier {
     await preferences.setBool('useMaterialYou', useMaterialYou);
   }
 
-  // New: Method to save custom accent color
   void _saveCustomAccentColorPreference(Color color) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    await preferences.setInt(
-        'customAccentColor', color.value); // Save color as int
+    await preferences.setInt('customAccentColor', color.value);
   }
 
   void setSystemNavigationBarIconBrightness(ThemeMode mode) {
