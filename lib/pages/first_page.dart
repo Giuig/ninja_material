@@ -12,10 +12,12 @@ import 'settings_page.dart';
 class FirstPageConfig {
   final List<NavigationDestination> Function(BuildContext) destinationsBuilder;
   final List<Widget> pages;
+  final Widget? bottomBar;
 
   const FirstPageConfig({
     required this.destinationsBuilder,
     required this.pages,
+    this.bottomBar,
   });
 }
 
@@ -171,15 +173,28 @@ class _FirstPageState extends State<FirstPage> {
                 ),
               ),
             ),
-          Expanded(child: _pages[_currentPageIndex]),
+          Expanded(
+            // Using IndexedStack here to preserve the state of pages
+            // when switching between them.
+            child: IndexedStack(
+              index: _currentPageIndex,
+              children: _pages,
+            ),
+          ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() => _currentPageIndex = index);
-        },
-        selectedIndex: _currentPageIndex,
-        destinations: _destinations,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.config?.bottomBar != null) widget.config!.bottomBar!,
+          NavigationBar(
+            onDestinationSelected: (int index) {
+              setState(() => _currentPageIndex = index);
+            },
+            selectedIndex: _currentPageIndex,
+            destinations: _destinations,
+          ),
+        ],
       ),
     );
   }
