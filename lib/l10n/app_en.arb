@@ -5,5 +5,11 @@
   "settings": "Settings",
   "changeTheme": "Change theme",
   "language": "Language",
-  "version": "Version"
+  "version": "Version",
+  "themeMode": "Theme Mode",
+  "systemTheme": "System",
+  "lightTheme": "Light",
+  "darkTheme": "Dark",
+  "useMaterialYou": "Use Material You",
+  "themeAccent": "Theme Accent"
 }

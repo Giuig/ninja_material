@@ -3,5 +3,11 @@
     "settings": "Config.",
     "changeTheme": "Cambiar tema",
     "language": "Idioma",
-    "version": "Versión"
+    "version": "Versión",
+     "themeMode": "Modo de tema",
+    "systemTheme": "Tema del sistema",
+    "lightTheme": "Tema claro",
+    "darkTheme": "Tema oscuro",
+    "useMaterialYou": "Usar Material You",
+    "themeAccent": "Acento del tema"
 }

@@ -1,9 +1,11 @@
-// ignore_for_file: prefer_const_constructors, library_private_types_in_public_api, prefer_const_literals_to_create_immutables, sort_child_properties_last
+// lib/pages/settings_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:ninja_material/utils/svg_util.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 
 import '../config/shared_config.dart';
 import '../l10n/app_localizations.dart';
@@ -18,8 +20,74 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final List<Locale> _localeOptions = L10n.all;
+  final List<ThemeMode> _themeModeOptions = [
+    ThemeMode.system,
+    ThemeMode.light,
+    ThemeMode.dark,
+  ];
 
-  bool _changeTheme = false;
+  ThemeMode _selectedThemeMode = ThemeMode.system;
+  bool _useMaterialYou = false;
+  bool _supportsDynamicColor = false;
+  Color _selectedAccentColor = Colors.blue.shade500;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _updateSettingsState();
+    _checkDynamicColorSupport();
+
+    globalCurrentTheme.addListener(_updateSettingsState);
+  }
+
+  @override
+  void dispose() {
+    globalCurrentTheme.removeListener(_updateSettingsState);
+    super.dispose();
+  }
+
+  void _updateSettingsState() {
+    setState(() {
+      _selectedThemeMode = globalCurrentTheme.getStoredThemeMode();
+      _useMaterialYou = globalCurrentTheme.useMaterialYou;
+
+      Color? currentCustomColor = globalCurrentTheme.customAccentColor;
+
+      if (currentCustomColor != null &&
+          globalThemeColorOptions.containsValue(currentCustomColor)) {
+        _selectedAccentColor = currentCustomColor;
+      } else {
+        _selectedAccentColor = globalThemeColorOptions['Default']!;
+      }
+    });
+  }
+
+  Future<void> _checkDynamicColorSupport() async {
+    final dynamic corePalette = await DynamicColorPlugin.getCorePalette();
+    setState(() {
+      _supportsDynamicColor = corePalette != null;
+    });
+  }
+
+  String _getThemeModeName(BuildContext context, ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return AppLocalizations.of(context)!.systemTheme;
+      case ThemeMode.light:
+        return AppLocalizations.of(context)!.lightTheme;
+      case ThemeMode.dark:
+        return AppLocalizations.of(context)!.darkTheme;
+    }
+  }
+
+  String _getAccentColorName(Color color) {
+    return globalThemeColorOptions.entries
+        .firstWhere((entry) => entry.value == color,
+            orElse: () =>
+                MapEntry('Default', globalThemeColorOptions['Default']!))
+        .key;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,15 +98,60 @@ class _SettingsPageState extends State<SettingsPage> {
           Expanded(
             child: ListView(
               children: <Widget>[
-                SwitchListTile(
-                  title: Text(AppLocalizations.of(context)!.changeTheme),
-                  value: _changeTheme,
-                  onChanged: (value) {
-                    setState(() {
-                      _changeTheme = value;
-                      globalCurrentTheme.switchTheme();
-                    });
-                  },
+                ListTile(
+                  title: Text(AppLocalizations.of(context)!.themeMode),
+                  trailing: DropdownButtonHideUnderline(
+                    child: DropdownButton<ThemeMode>(
+                      value: _selectedThemeMode,
+                      onChanged: (ThemeMode? newValue) {
+                        if (newValue != null) {
+                          globalCurrentTheme.setThemeMode(newValue);
+                        }
+                      },
+                      items: _themeModeOptions
+                          .map<DropdownMenuItem<ThemeMode>>((ThemeMode value) {
+                        return DropdownMenuItem<ThemeMode>(
+                          value: value,
+                          child: Text(_getThemeModeName(context, value)),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                if (_supportsDynamicColor)
+                  SwitchListTile(
+                    title: Text(AppLocalizations.of(context)!.useMaterialYou),
+                    value: _useMaterialYou,
+                    onChanged: (value) {
+                      setState(() {
+                        _useMaterialYou = value;
+                        globalCurrentTheme.setUseMaterialYou(value);
+                      });
+                    },
+                  ),
+                ListTile(
+                  title: Text(AppLocalizations.of(context)!.themeAccent),
+                  trailing: DropdownButtonHideUnderline(
+                    child: DropdownButton<Color>(
+                      value: _selectedAccentColor,
+                      onChanged: _useMaterialYou
+                          ? null
+                          : (Color? newValue) {
+                              if (newValue != null) {
+                                globalCurrentTheme
+                                    .setCustomAccentColor(newValue);
+                              }
+                            },
+                      items: globalThemeColorOptions.entries
+                          .map<DropdownMenuItem<Color>>(
+                              (MapEntry<String, Color> entry) {
+                        return DropdownMenuItem<Color>(
+                          value: entry.value,
+                          child: Text(entry.key),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
                 ListTile(
                   title: Text(AppLocalizations.of(context)!.language),
@@ -89,7 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
+                      "© ${globalCurrentYear} ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
                       style: TextStyle(
                         fontSize: 12.0,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -110,7 +223,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 Text(
-                  "Version: $globalVersion ($globalBuildNumber)",
+                  "Version: ${globalVersion} (${globalBuildNumber})",
                   style: TextStyle(
                     fontSize: 12.0,
                     color: Theme.of(context).colorScheme.onSurface,

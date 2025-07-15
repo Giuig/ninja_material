@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "ninja_material",
-      "version": "1.0.1+3",
+      "version": "1.0.2+4",
       "dependencies": [
         "cupertino_icons",
         "dynamic_color",

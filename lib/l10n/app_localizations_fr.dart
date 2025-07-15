@@ -22,4 +22,22 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get version => 'Version';
+
+  @override
+  String get themeMode => 'Mode de thème';
+
+  @override
+  String get systemTheme => 'Thème du système';
+
+  @override
+  String get lightTheme => 'Thème clair';
+
+  @override
+  String get darkTheme => 'Thème sombre';
+
+  @override
+  String get useMaterialYou => 'Utiliser Material You';
+
+  @override
+  String get themeAccent => 'Accent du thème';
 }

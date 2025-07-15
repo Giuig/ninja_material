@@ -16,11 +16,13 @@ import 'pages/first_page.dart';
 Future<void> runNinjaApp({
   required Color defaultSeedColor,
   required LocalizationsDelegate<dynamic> specificLocalizationDelegate,
-  required String packageName,
   required FirstPageConfig appFirstPageConfig,
   List<Future<void> Function()> additionalFunctions = const [],
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await globalCurrentTheme.init();
+  await globalCurrentLocale.init();
 
   for (final function in additionalFunctions) {
     await function();
@@ -44,6 +46,13 @@ Future<void> runNinjaApp({
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
+  final Map<String, Color> orderedThemeColorOptions = {};
+  orderedThemeColorOptions['Default'] = defaultSeedColor;
+  orderedThemeColorOptions.addAll(globalThemeColorOptions);
+
+  globalThemeColorOptions.clear();
+  globalThemeColorOptions.addAll(orderedThemeColorOptions);
+
   runApp(_NinjaApp(
     defaultSeedColor: defaultSeedColor,
     specificLocalizationDelegate: specificLocalizationDelegate,
@@ -57,6 +66,7 @@ class _NinjaApp extends StatefulWidget {
   final FirstPageConfig appFirstPageConfig;
 
   const _NinjaApp({
+    super.key,
     required this.defaultSeedColor,
     required this.specificLocalizationDelegate,
     required this.appFirstPageConfig,
@@ -76,30 +86,43 @@ class _NinjaAppState extends State<_NinjaApp> {
 
   @override
   Widget build(BuildContext context) {
-    final defaultLight = ColorScheme.fromSeed(
-      seedColor: widget.defaultSeedColor,
-      brightness: Brightness.light,
-    );
-    final defaultDark = ColorScheme.fromSeed(
-      seedColor: widget.defaultSeedColor,
-      brightness: Brightness.dark,
-    );
-
     return DynamicColorBuilder(
       builder: (lightColorScheme, darkColorScheme) {
-        final light = ColorScheme.fromSeed(
-          seedColor: lightColorScheme?.primary ?? defaultLight.primary,
-          brightness: Brightness.light,
-        );
+        ColorScheme light;
+        ColorScheme dark;
 
-        final dark = ColorScheme.fromSeed(
-          seedColor: darkColorScheme?.primary ?? defaultDark.primary,
-          brightness: Brightness.dark,
-        );
+        Color effectiveSeedColor = widget.defaultSeedColor;
+
+        if (!globalCurrentTheme.useMaterialYou &&
+            globalCurrentTheme.customAccentColor != null) {
+          effectiveSeedColor = globalCurrentTheme.customAccentColor!;
+        }
+
+        if (globalCurrentTheme.useMaterialYou &&
+            lightColorScheme != null &&
+            darkColorScheme != null) {
+          light = lightColorScheme;
+          dark = darkColorScheme;
+        } else {
+          light = ColorScheme.fromSeed(
+            seedColor: effectiveSeedColor,
+            brightness: Brightness.light,
+          );
+          dark = ColorScheme.fromSeed(
+            seedColor: effectiveSeedColor,
+            brightness: Brightness.dark,
+          );
+        }
 
         return MaterialApp(
-          theme: ThemeData(colorScheme: light, useMaterial3: true),
-          darkTheme: ThemeData(colorScheme: dark, useMaterial3: true),
+          theme: ThemeData(
+            colorScheme: light,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: dark,
+            useMaterial3: true,
+          ),
           themeMode: globalCurrentTheme.currentTheme(context),
           supportedLocales: L10n.all,
           locale: globalCurrentLocale.currentLocale(context),

@@ -135,6 +135,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version'**
   String get version;
+
+  /// No description provided for @themeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Mode'**
+  String get themeMode;
+
+  /// No description provided for @systemTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get systemTheme;
+
+  /// No description provided for @lightTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get lightTheme;
+
+  /// No description provided for @darkTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get darkTheme;
+
+  /// No description provided for @useMaterialYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Material You'**
+  String get useMaterialYou;
+
+  /// No description provided for @themeAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Accent'**
+  String get themeAccent;
 }
 
 class _AppLocalizationsDelegate

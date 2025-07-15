@@ -22,4 +22,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get version => 'Versión';
+
+  @override
+  String get themeMode => 'Modo de tema';
+
+  @override
+  String get systemTheme => 'Tema del sistema';
+
+  @override
+  String get lightTheme => 'Tema claro';
+
+  @override
+  String get darkTheme => 'Tema oscuro';
+
+  @override
+  String get useMaterialYou => 'Usar Material You';
+
+  @override
+  String get themeAccent => 'Acento del tema';
 }
