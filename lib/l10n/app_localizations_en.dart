@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get darkTheme => 'Dark';
 
   @override
-  String get useMaterialYou => 'Use Material YOU';
+  String get useMaterialYou => 'Use Material You';
 
   @override
   String get themeAccent => 'Theme Accent';

@@ -24,20 +24,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get version => 'バージョン';
 
   @override
-  String get themeMode => 'Theme Mode';
+  String get themeMode => 'テーマモード';
 
   @override
-  String get systemTheme => 'System';
+  String get systemTheme => 'システムテーマ';
 
   @override
-  String get lightTheme => 'Light';
+  String get lightTheme => 'ライトテーマ';
 
   @override
-  String get darkTheme => 'Dark';
+  String get darkTheme => 'ダークテーマ';
 
   @override
-  String get useMaterialYou => 'Use Material YOU';
+  String get useMaterialYou => 'Material You を使用';
 
   @override
-  String get themeAccent => 'Theme Accent';
+  String get themeAccent => 'テーマアクセント';
 }

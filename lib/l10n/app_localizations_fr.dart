@@ -24,20 +24,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get version => 'Version';
 
   @override
-  String get themeMode => 'Theme Mode';
+  String get themeMode => 'Mode de thème';
 
   @override
-  String get systemTheme => 'System';
+  String get systemTheme => 'Thème du système';
 
   @override
-  String get lightTheme => 'Light';
+  String get lightTheme => 'Thème clair';
 
   @override
-  String get darkTheme => 'Dark';
+  String get darkTheme => 'Thème sombre';
 
   @override
-  String get useMaterialYou => 'Use Material YOU';
+  String get useMaterialYou => 'Utiliser Material You';
 
   @override
-  String get themeAccent => 'Theme Accent';
+  String get themeAccent => 'Accent du thème';
 }

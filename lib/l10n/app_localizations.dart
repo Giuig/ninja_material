@@ -163,7 +163,7 @@ abstract class AppLocalizations {
   /// No description provided for @useMaterialYou.
   ///
   /// In en, this message translates to:
-  /// **'Use Material YOU'**
+  /// **'Use Material You'**
   String get useMaterialYou;
 
   /// No description provided for @themeAccent.
