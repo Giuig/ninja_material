@@ -12,7 +12,6 @@
         "flutter",
         "flutter_localizations",
         "flutter_svg",
-        "google_mobile_ads",
         "package_info_plus",
         "shared_preferences",
         "url_launcher",
@@ -100,17 +99,6 @@
         "flutter",
         "webview_flutter_android",
         "webview_flutter_platform_interface",
-        "webview_flutter_wkwebview"
-      ]
-    },
-    {
-      "name": "google_mobile_ads",
-      "version": "6.0.0",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "webview_flutter",
-        "webview_flutter_android",
         "webview_flutter_wkwebview"
       ]
     },

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ninja_material/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -34,10 +33,6 @@ Future<void> runNinjaApp({
 
   for (final function in additionalFunctions) {
     await function();
-  }
-
-  if (!kIsWeb) {
-    MobileAds.instance.initialize();
   }
 
   final info = await PackageInfo.fromPlatform();

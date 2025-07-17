@@ -128,12 +128,6 @@
       "languageVersion": "3.7"
     },
     {
-      "name": "google_mobile_ads",
-      "rootUri": "file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/google_mobile_ads-6.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.6"
-    },
-    {
       "name": "http",
       "rootUri": "file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/http-1.4.0",
       "packageUri": "lib/",
