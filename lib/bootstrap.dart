@@ -79,7 +79,6 @@ class _NinjaApp extends StatefulWidget {
   final FirstPageConfig appFirstPageConfig;
 
   const _NinjaApp({
-    super.key,
     required this.defaultSeedColor,
     required this.specificLocalizationDelegate,
     required this.appFirstPageConfig,
