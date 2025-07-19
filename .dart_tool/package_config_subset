@@ -134,6 +134,10 @@ meta
 2.12
 file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.16.0/
 file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.16.0/lib/
+nested
+2.12
+file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/nested-1.0.0/
+file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/nested-1.0.0/lib/
 package_info_plus
 3.3
 file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus-8.3.0/
@@ -178,6 +182,10 @@ posix
 3.0
 file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/posix-6.0.3/
 file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/posix-6.0.3/lib/
+provider
+2.12
+file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/provider-6.1.5/
+file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/provider-6.1.5/lib/
 shared_preferences
 3.5
 file:///C:/Users/giuli/AppData/Local/Pub/Cache/hosted/pub.dev/shared_preferences-2.5.3/

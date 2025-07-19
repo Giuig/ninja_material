@@ -14,6 +14,7 @@
         "flutter_svg",
         "google_mobile_ads",
         "package_info_plus",
+        "provider",
         "shared_preferences",
         "url_launcher",
         "webview_flutter"
@@ -167,6 +168,15 @@
       "name": "cupertino_icons",
       "version": "1.0.8",
       "dependencies": []
+    },
+    {
+      "name": "provider",
+      "version": "6.1.5",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "nested"
+      ]
     },
     {
       "name": "flutter",
@@ -611,6 +621,13 @@
       "name": "ffi",
       "version": "2.1.4",
       "dependencies": []
+    },
+    {
+      "name": "nested",
+      "version": "1.0.0",
+      "dependencies": [
+        "flutter"
+      ]
     },
     {
       "name": "sky_engine",

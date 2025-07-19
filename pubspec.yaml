@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  provider: ^6.1.5
+
   cupertino_icons: ^1.0.8
   dynamic_color: ^1.7.0
 
