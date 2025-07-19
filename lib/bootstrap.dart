@@ -19,7 +19,12 @@ Future<void> runNinjaApp({
   required FirstPageConfig appFirstPageConfig,
   List<Future<void> Function()> additionalFunctions = const [],
   List<SingleChildWidget> additionalProviders = const [],
+  Future<void> Function()? preRunAppInitialization,
 }) async {
+  if (preRunAppInitialization != null) {
+    await preRunAppInitialization();
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
 
   await globalCurrentTheme.init();
