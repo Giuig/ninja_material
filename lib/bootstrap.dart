@@ -64,16 +64,22 @@ Future<void> runNinjaApp({
     ..addAll(orderedThemeColorOptions);
 
   runApp(
-    MultiProvider(
-      providers: [
-        ...additionalProviders,
-      ],
-      child: _NinjaApp(
-        defaultSeedColor: defaultSeedColor,
-        specificLocalizationDelegate: specificLocalizationDelegate,
-        appFirstPageConfig: appFirstPageConfig,
-      ),
-    ),
+    additionalProviders.isEmpty
+        ? _NinjaApp(
+            defaultSeedColor: defaultSeedColor,
+            specificLocalizationDelegate: specificLocalizationDelegate,
+            appFirstPageConfig: appFirstPageConfig,
+          )
+        : MultiProvider(
+            providers: [
+              ...additionalProviders,
+            ],
+            child: _NinjaApp(
+              defaultSeedColor: defaultSeedColor,
+              specificLocalizationDelegate: specificLocalizationDelegate,
+              appFirstPageConfig: appFirstPageConfig,
+            ),
+          ),
   );
 }
 
