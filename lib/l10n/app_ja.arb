@@ -1,0 +1,15 @@
+{
+    "home": "ホーム",
+    "settings": "設定",
+    "changeTheme": "テーマを変える",
+    "language": "言語",
+    "version": "バージョン",
+    "themeMode": "テーマモード",
+    "systemTheme": "システムテーマ",
+    "lightTheme": "ライトテーマ",
+    "darkTheme": "ダークテーマ",
+    "useMaterialYou": "Material You を使用",
+    "themeAccent": "テーマアクセント",
+    "defaultColor": "デフォルト",
+    "support": "サポート"
+}

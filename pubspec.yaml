@@ -1,0 +1,39 @@
+name: ninja_material
+description: Shared Flutter library powering all ninja apps
+
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+version: 1.4.3
+
+environment:
+  sdk: ">=3.1.2 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  provider: ^6.1.5+1
+  cupertino_icons: ^1.0.8
+  dynamic_color: ^1.8.1
+  package_info_plus: ^9.0.0
+  flutter_svg: ^2.2.4
+  shared_preferences: ^2.5.4
+  webview_flutter: ^4.13.1
+  url_launcher: ^6.3.2
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^6.0.0
+
+flutter:
+  fonts:
+  - family: The Hand
+    fonts:
+      - asset: assets/fonts/The Hand Regular.otf
+
+  uses-material-design: true
+  generate: true

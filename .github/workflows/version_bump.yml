@@ -1,0 +1,46 @@
+name: Version Bump & Release
+
+on:
+  push:
+    paths:
+      - 'pubspec.yaml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | awk '{print $1}' | tr -d ' ')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Check if version changed
+        id: check_version
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          CURRENT_VERSION="v${{ steps.version.outputs.version }}"
+          if [ "$LATEST_TAG" = "$CURRENT_VERSION" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged: $CURRENT_VERSION"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "New version: $CURRENT_VERSION (was $LATEST_TAG)"
+          fi
+
+      - name: Create GitHub Release
+        if: steps.check_version.outputs.changed == 'true'
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --notes "See commit history for details."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,196 @@
+name: Build Ninja App
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        description: 'Name of the app (used in artifact names)'
+        required: true
+        type: string
+      package-id:
+        description: 'Android package ID (e.g., com.tvninja)'
+        required: true
+        type: string
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+    secrets:
+      KEYSTORE_BASE64:
+        required: false
+        description: 'Base64 encoded keystore file'
+      KEYSTORE_PASSWORD:
+        required: false
+        description: 'Keystore password'
+      KEY_ALIAS:
+        required: false
+        description: 'Key alias'
+      KEY_PASSWORD:
+        required: false
+        description: 'Key password'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+          channel: 'stable'
+
+      - name: Clear build cache
+        run: |
+          rm -rf .dart_tool build android/.gradle
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Setup release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Setting up release signing..."
+            mkdir -p android/app
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+            cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=release.keystore
+          EOF
+            echo "Release signing configured"
+          else
+            echo "No keystore secret found - using debug signing"
+          fi
+
+      - name: Build APKs
+        env:
+          GRADLE_OPTS: "-Xmx4G -Xms1G"
+          JAVA_OPTS: "-Xmx4G -Xms1G"
+        run: |
+          flutter build apk --release --split-per-abi --no-tree-shake-icons --split-debug-info=build/debug-info
+          flutter build apk --release --no-tree-shake-icons --split-debug-info=build/debug-info
+
+      - name: Prepare APKs
+        run: |
+          mkdir -p release
+          VERSION="${{ inputs.version }}"
+          VERSION=${VERSION#v}
+          echo "Building version: $VERSION"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk release/${{ inputs.app-name }}-${VERSION}-arm64-v8a.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release/${{ inputs.app-name }}-${VERSION}-armeabi-v7a.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk release/${{ inputs.app-name }}-${VERSION}-x86_64.apk
+          cp build/app/outputs/flutter-apk/app-release.apk release/${{ inputs.app-name }}-${VERSION}.apk
+          ls -la release/
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.app-name }}-apks
+          path: release/*.apk
+
+      - name: Upload debug info
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.app-name }}-debug-info
+          path: build/debug-info/
+          retention-days: 90
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          pattern: ${{ inputs.app-name }}-apks
+          merge-multiple: true
+
+      - name: Determine version
+        id: version
+        run: |
+          VERSION="${{ inputs.version }}"
+          VERSION=${VERSION#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Calculate SHA256
+        run: |
+          cd release 2>/dev/null || true
+          echo "# ${{ inputs.app-name }} Checksums" > checksums.txt
+          echo "" >> checksums.txt
+          echo "## APK Checksums" >> checksums.txt
+          for f in *.apk; do
+            if [ -f "$f" ]; then
+              echo "$f: $(sha256sum "$f" | cut -d' ' -f1)" >> checksums.txt
+            fi
+          done
+          cat checksums.txt
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          VERSION="${{ inputs.version }}"
+          CURRENT_TAG="v$(echo $VERSION | sed 's/^v//')"
+          
+          ALL_TAGS=$(git tag --sort=-version:refname | grep -E "^v[0-9]" | grep -v "^$CURRENT_TAG$")
+          PREVIOUS_TAG=$(echo "$ALL_TAGS" | head -1)
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %h %s" --no-merges)
+          else
+            COMMITS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %h %s" --no-merges)
+          fi
+          
+          if [ -z "$COMMITS" ]; then
+            COMMITS="No changes since last release"
+          fi
+          
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          RELEASE_BODY="## Changes in $VERSION"$'\n\n'
+          RELEASE_BODY+="$COMMITS"
+          
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          body: |
+            ${{ steps.release-notes.outputs.body }}
+
+            ## Downloads
+
+            | Architecture | File |
+            |-------------|------|
+            | **Universal** | ${{ inputs.app-name }}-${{ steps.version.outputs.version }}.apk |
+            | arm64-v8a | ${{ inputs.app-name }}-${{ steps.version.outputs.version }}-arm64-v8a.apk |
+            | armeabi-v7a | ${{ inputs.app-name }}-${{ steps.version.outputs.version }}-armeabi-v7a.apk |
+            | x86_64 | ${{ inputs.app-name }}-${{ steps.version.outputs.version }}-x86_64.apk |
+
+            See checksums.txt for verification.
+          draft: false
+          prerelease: false
+          files: |
+            release/*.apk
+            release/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

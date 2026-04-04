@@ -1,0 +1,15 @@
+{
+    "home": "Home",
+    "settings": "Einst.",
+    "changeTheme": "Design ändern",
+    "language": "Sprache",
+    "version": "Version",
+    "themeMode": "Designmodus",
+    "systemTheme": "Systemdesign",
+    "lightTheme": "Helles Design",
+    "darkTheme": "Dunkles Design",
+    "useMaterialYou": "Material You verwenden",
+    "themeAccent": "Design-Akzent",
+    "defaultColor": "Standard",
+    "support": "Support"
+}

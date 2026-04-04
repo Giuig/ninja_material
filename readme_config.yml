@@ -1,0 +1,61 @@
+slug: ninja_material
+name: ninja_material
+github: https://github.com/Giuig/ninja_material
+is_library: true
+description: >
+  Shared Flutter library powering all ninja apps. Provides Material You theming, localization, navigation scaffolding, and CI/CD workflows.
+build_commands: |
+  flutter pub get
+  flutter build web --release
+features:
+  - "**`runNinjaApp()`** — single entry point for all apps, wires up theming, localization, and providers"
+  - "**`FirstPageConfig`** — configures the navigation shell (destinations, pages, bottom bar)"
+  - "**Material You theming** — dynamic color with `dynamic_color`, light/dark mode"
+  - "**Localization** — base strings in 6 languages (en, de, es, fr, it, ja), extendable per app"
+  - "**Reusable CI/CD workflows** — shared GitHub Actions for version bumping, APK builds, and web deploys"
+extra_sections:
+  - title: Usage
+    content: |
+      Add to `pubspec.yaml`, pinned to a release tag:
+
+      ```yaml
+      dependencies:
+        ninja_material:
+          git:
+            url: https://github.com/Giuig/ninja_material.git
+            ref: v1.3.0
+      ```
+
+      Bootstrap your app:
+
+      ```dart
+      import 'package:ninja_material/bootstrap.dart';
+
+      void main() {
+        runNinjaApp(
+          defaultSeedColor: Colors.teal,
+          specificLocalizationDelegate: AppLocalizations.delegate,
+          appFirstPageConfig: myFirstPageConfig,
+        );
+      }
+      ```
+  - title: Reusable workflows
+    content: |
+      Reference from any app repo:
+
+      ```yaml
+      # .github/workflows/build.yml
+      jobs:
+        build:
+          uses: Giuig/ninja_material/.github/workflows/build-app.yml@main
+          with:
+            app-name: myapp
+            package-id: com.myapp
+            version: ${{ github.ref_name }}
+          secrets: inherit
+      ```
+
+      Available workflows:
+      - `build-app.yml` — builds universal + split APKs and creates a GitHub release
+      - `version-bump.yml` — auto-tags and triggers builds on `pubspec.yaml` changes
+      - `web-deploy.yml` — deploys to GitHub Pages

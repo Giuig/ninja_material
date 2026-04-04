@@ -1,0 +1,93 @@
+name: Version Bump
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        description: 'App name for identification'
+        required: true
+        type: string
+      trigger-web:
+        description: 'Whether to trigger web deployment'
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      version:
+        description: 'The version that was tagged'
+        value: ${{ jobs.check-version.outputs.version }}
+      should_release:
+        description: 'Whether a new release was triggered'
+        value: ${{ jobs.check-version.outputs.should_release }}
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      should_release: ${{ steps.check.outputs.HAS_CHANGED }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clean up ambiguous tags
+        run: |
+          if git tag -l "main" | grep -q "main"; then
+            echo "Removing ambiguous 'main' tag..."
+            git tag -d main || true
+            git push origin --delete tag main 2>/dev/null || true
+          fi
+
+      - name: Get current version
+        id: version
+        run: |
+          CURRENT_VERSION=$(grep -E "^version:" pubspec.yaml | awk '{print $2}')
+          echo "VERSION=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if version changed
+        id: check
+        run: |
+          CURRENT_VERSION=$(grep -E "^version:" pubspec.yaml | awk '{print $2}')
+          
+          # Reject reserved/ambiguous tag names
+          if [[ "$CURRENT_VERSION" == "main" || "$CURRENT_VERSION" == "master" || "$CURRENT_VERSION" == "HEAD" || "$CURRENT_VERSION" == "dev" ]]; then
+            echo "ERROR: Version '$CURRENT_VERSION' is a reserved git name and cannot be used as a tag"
+            echo "HAS_CHANGED=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check if tag already exists
+          if git tag | grep -q "^v$CURRENT_VERSION$"; then
+            echo "Tag v$CURRENT_VERSION already exists"
+            echo "HAS_CHANGED=false" >> $GITHUB_OUTPUT
+          else
+            echo "New version detected: $CURRENT_VERSION"
+            echo "HAS_CHANGED=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Tag
+        if: steps.check.outputs.HAS_CHANGED == 'true'
+        run: |
+          CURRENT_VERSION=$(grep -E "^version:" pubspec.yaml | awk '{print $2}')
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag "v$CURRENT_VERSION"
+          git push origin "v$CURRENT_VERSION"
+          echo "Created and pushed tag v$CURRENT_VERSION"
+
+      - name: Trigger Build APK workflow
+        if: steps.check.outputs.HAS_CHANGED == 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: trigger-build
+          client-payload: '{"version": "${{ steps.version.outputs.VERSION }}"}'
+
+      - name: Trigger Deploy Web workflow
+        if: steps.check.outputs.HAS_CHANGED == 'true' && inputs.trigger-web
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: trigger-web
+          client-payload: '{"version": "${{ steps.version.outputs.VERSION }}"}'

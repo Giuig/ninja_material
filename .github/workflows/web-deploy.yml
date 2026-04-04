@@ -1,0 +1,62 @@
+name: Deploy Web to GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        description: 'App name (used for --base-href)'
+        required: true
+        type: string
+      flutter-version:
+        description: 'Flutter version to use'
+        required: false
+        type: string
+        default: '3.41.5'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ inputs.flutter-version }}
+          channel: 'stable'
+          cache: true
+
+      - name: Clear pub cache for ninja_material
+        run: |
+          rm -rf ~/.pub-cache/git/github.com-Giuig-ninja_material-*
+          rm -rf .dart_tool build android/.gradle
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build web
+        run: flutter build web --base-href=/${{ inputs.app-name }}/ --release --no-tree-shake-icons
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build-web
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
