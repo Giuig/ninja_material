@@ -31,6 +31,18 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  /// Shared width for all three settings dropdowns.
+  ///
+  /// Was 190 on two of them and unset on the third, which produced both
+  /// visible defects: Italian's "Tema di sistema" truncated to "Tema di
+  /// sistem", and the language dropdown sitting at a different width from the
+  /// other two. One constant keeps them aligned and stops them drifting apart
+  /// again. 220 fits the longest current option across the shipped locales at
+  /// the default text scale — a much longer translation, or a large system
+  /// font, can still clip, which wants a non-fixed width rather than a bigger
+  /// number.
+  static const double _dropdownWidth = 220;
+
   static const _githubUrl = 'https://github.com/Giuig';
 
   static const _supportOptions = [
@@ -139,7 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Text(l10n.themeMode),
                   trailing: DropdownMenu<ThemeMode>(
                     key: ValueKey(selectedLocale),
-                    width: 190,
+                    width: _dropdownWidth,
                     initialSelection: _selectedThemeMode,
                     requestFocusOnTap: false,
                     onSelected: (ThemeMode? mode) {
@@ -189,7 +201,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Text(l10n.themeAccent),
                   trailing: DropdownMenu<Color>(
                     key: ValueKey(selectedLocale),
-                    width: 190,
+                    width: _dropdownWidth,
                     enabled: !_useMaterialYou,
                     initialSelection: _selectedAccentColor,
                     requestFocusOnTap: false,
@@ -224,8 +236,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   title: Text(l10n.language),
                   trailing: DropdownMenu<Locale>(
+                    width: _dropdownWidth,
                     key: ValueKey(selectedLocale),
-                    width: 160,
                     initialSelection: selectedLocale,
                     requestFocusOnTap: false,
                     onSelected: (Locale? locale) {
