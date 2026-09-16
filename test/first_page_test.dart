@@ -8,8 +8,10 @@ import 'package:ninja_material/pages/first_page.dart';
 ///
 /// Three apps depend on `ninja_material`, so a regression here does not fail
 /// one app's CI — it reaches every app, whenever each next bumps its pinned
-/// `ref`. These cover the shell's navigation contract and the settings
-/// extension point: the two things an app cannot work around if they break.
+/// `ref`. These cover the shell's navigation contract, its interaction with
+/// the pre-existing side-by-side player layout, preservation of an app-supplied
+/// bottomBar, and the settings extension point — the things an app cannot work
+/// around if they break.
 void main() {
   setUp(() {
     // FirstPage.initState reads this unconditionally.
@@ -19,6 +21,8 @@ void main() {
   FirstPageConfig config({
     bool responsiveNavigation = false,
     List<Widget>? extraSettings,
+    Widget? bottomBar,
+    bool hasActivePlayer = false,
   }) =>
       FirstPageConfig(
         destinationsBuilder: (_) => const [
@@ -27,6 +31,10 @@ void main() {
         pages: const [Center(child: Text('PAGE'))],
         responsiveNavigation: responsiveNavigation,
         extraSettings: extraSettings,
+        bottomBar: bottomBar,
+        sideBySidePlayerBuilder:
+            hasActivePlayer ? (_) => const Center(child: Text('PLAYER')) : null,
+        hasActivePlayerBuilder: hasActivePlayer ? (_) => true : null,
       );
 
   Future<void> pumpShell(
@@ -82,6 +90,46 @@ void main() {
 
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.byType(NavigationRail), findsNothing);
+    });
+
+    testWidgets('rail stands down under the side-by-side player layout',
+        (tester) async {
+      // The riskiest interaction in the change: FirstPage already had a
+      // landscape mode with its own navigation (_buildLandscapeTabBar). This
+      // size is landscape AND past the rail breakpoint, so without the
+      // !useSideBySide guard both would try to own navigation at once.
+      await pumpShell(
+        tester,
+        cfg: config(responsiveNavigation: true, hasActivePlayer: true),
+        size: const Size(1000, 600),
+      );
+
+      expect(find.text('PLAYER'), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      // Side-by-side hides the bottom bar too — its own tab bar replaces it.
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('an app-supplied bottomBar survives the rail swap',
+        (tester) async {
+      // bottomBar is a real app widget (auraninja's player bar). The rail
+      // replaces the NavigationBar only; taking the whole bottomNavigationBar
+      // slot would silently delete a feature.
+      await pumpShell(
+        tester,
+        cfg: config(
+          responsiveNavigation: true,
+          bottomBar: const SizedBox(
+            height: 40,
+            child: Center(child: Text('APP BOTTOM BAR')),
+          ),
+        ),
+        size: const Size(1000, 800),
+      );
+
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.text('APP BOTTOM BAR'), findsOneWidget);
     });
 
     testWidgets('rail carries every destination, including the appended one',
