@@ -282,52 +282,57 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
           // ── Footer ───────────────────────────────────────────────────────
+          // One wrapping row rather than a four-item stack. The old layout was
+          // ~133 logical px: 30 of outer padding, 22 of stacked SizedBox
+          // spacers, ~33 of text, and a 48px row holding one 20px icon.
+          //
+          // The 48 stays — that is Material's minimum tap target, and shrinking
+          // it would trade height for an accessibility regression. Everything
+          // else collapses into the row the icon already needs, so the footer
+          // costs roughly what that button costs and nothing more.
+          //
+          // Wrap, not Row: a long app name or a large system font falls onto a
+          // second line instead of overflowing.
           Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
               children: [
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
-                      style: TextStyle(
-                          fontSize: 12.0, color: colorScheme.onSurface),
-                    ),
-                    Text(", Made with ",
-                        style: TextStyle(
-                            fontSize: 12.0, color: colorScheme.onSurface)),
-                    SvgPicture.string(SvgUtil.flutterSvgString,
-                        width: 17, height: 17),
-                  ],
-                ),
                 Text(
-                  "Version: $globalVersion",
+                  "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
                   style:
                       TextStyle(fontSize: 12.0, color: colorScheme.onSurface),
                 ),
-                const SizedBox(height: 8),
+                Text(
+                  "v$globalVersion",
+                  style:
+                      TextStyle(fontSize: 12.0, color: colorScheme.onSurface),
+                ),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Tooltip(
-                      message: 'GitHub',
-                      child: IconButton(
-                        onPressed: () => _launchUrl(_githubUrl),
-                        icon: SvgPicture.string(
-                          SvgUtil.githubSvgString,
-                          width: 20,
-                          height: 20,
-                          colorFilter: ColorFilter.mode(
-                              colorScheme.onSurfaceVariant, BlendMode.srcIn),
-                        ),
-                      ),
-                    ),
+                    Text("Made with ",
+                        style: TextStyle(
+                            fontSize: 12.0, color: colorScheme.onSurface)),
+                    SvgPicture.string(SvgUtil.flutterSvgString,
+                        width: 15, height: 15),
                   ],
                 ),
-                const SizedBox(height: 4),
+                Tooltip(
+                  message: 'GitHub',
+                  child: IconButton(
+                    onPressed: () => _launchUrl(_githubUrl),
+                    icon: SvgPicture.string(
+                      SvgUtil.githubSvgString,
+                      width: 20,
+                      height: 20,
+                      colorFilter: ColorFilter.mode(
+                          colorScheme.onSurfaceVariant, BlendMode.srcIn),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
