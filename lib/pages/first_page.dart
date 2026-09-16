@@ -22,6 +22,21 @@ class FirstPageConfig {
   /// from player-specific packages.
   final bool Function(BuildContext)? hasActivePlayerBuilder;
 
+  /// Opt in to a [NavigationRail] on wide viewports instead of the bottom
+  /// [NavigationBar].
+  ///
+  /// Defaults to **false** so existing apps are byte-for-byte unchanged until
+  /// they ask for it — this is a shared package, and a nav bar silently moving
+  /// is not something an app should inherit without deciding.
+  ///
+  /// Switches on **width**, not orientation: a phone in landscape and a tablet
+  /// in portrait share a width and should lay out the same way. 600 is
+  /// Material's compact/medium boundary.
+  ///
+  /// Ignored while the side-by-side player layout is active — that mode already
+  /// has its own landscape navigation (see [_buildLandscapeTabBar]).
+  final bool responsiveNavigation;
+
   const FirstPageConfig({
     required this.destinationsBuilder,
     required this.pages,
@@ -29,6 +44,7 @@ class FirstPageConfig {
     this.topBarBuilder,
     this.sideBySidePlayerBuilder,
     this.hasActivePlayerBuilder,
+    this.responsiveNavigation = false,
   });
 }
 
@@ -157,6 +173,15 @@ class _FirstPageState extends State<FirstPage> {
     final useSideBySide =
         hasActivePlayer && orientation == Orientation.landscape;
 
+    // Rail on wide viewports, when the app opted in and side-by-side is not
+    // already handling landscape. MediaQuery width is the right source here
+    // precisely because FirstPage IS the screen — nothing sits beside it. A
+    // widget nested inside the body must read its own constraints instead,
+    // since the rail makes the body narrower than the screen.
+    final useRail = !useSideBySide &&
+        (widget.config?.responsiveNavigation ?? false) &&
+        MediaQuery.of(context).size.width >= 600;
+
     Widget bodyContent;
     if (useSideBySide) {
       // Cap video at 480px so it doesn't overwhelm content on tablets/wide screens
@@ -199,6 +224,33 @@ class _FirstPageState extends State<FirstPage> {
       );
     }
 
+    if (useRail) {
+      bodyContent = Row(
+        children: [
+          NavigationRail(
+            selectedIndex: _currentPageIndex,
+            onDestinationSelected: (int index) {
+              setState(() => _currentPageIndex = index);
+            },
+            labelType: NavigationRailLabelType.all,
+            // NavigationRail will not take a NavigationDestination, so the
+            // shared list is mapped here. Doing it inside the package keeps
+            // `destinationsBuilder`'s existing signature — apps pass exactly
+            // what they pass today.
+            destinations: _destinations
+                .map((d) => NavigationRailDestination(
+                      icon: d.icon,
+                      selectedIcon: d.selectedIcon,
+                      label: Text(d.label),
+                    ))
+                .toList(),
+          ),
+          const VerticalDivider(width: 1, thickness: 1),
+          Expanded(child: bodyContent),
+        ],
+      );
+    }
+
     return Scaffold(
       // Hide the AppBar in landscape side-by-side to reclaim the full screen height
       appBar: useSideBySide
@@ -217,7 +269,12 @@ class _FirstPageState extends State<FirstPage> {
       // handles navigation instead.
       bottomNavigationBar: useSideBySide
           ? null
-          : Column(
+          : useRail
+              // The rail replaces the NavigationBar, but NOT an app-supplied
+              // bottomBar — that is a real widget (auraninja's player bar) and
+              // dropping it would silently remove a feature.
+              ? widget.config?.bottomBar
+              : Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (widget.config?.bottomBar != null) widget.config!.bottomBar!,
