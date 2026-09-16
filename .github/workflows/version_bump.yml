@@ -2,6 +2,12 @@ name: Version Bump & Release
 
 on:
   push:
+    # Both filters must match, so this fires only for a version change landing on
+    # main. Without the branch filter any feature-branch push touching pubspec.yaml
+    # ran this job, and a version bump made on a branch would have published a real
+    # GitHub Release from unmerged code.
+    branches:
+      - main
     paths:
       - 'pubspec.yaml'
 

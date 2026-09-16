@@ -15,13 +15,34 @@ class _SupportOption {
 }
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  /// App-specific settings rows, appended after the shared ones and before the
+  /// Support block.
+  ///
+  /// The shared page deliberately owns only what every ninja app has — theme,
+  /// colour, language. Anything specific to one app (tvninja's "always start in
+  /// audio-only", say) comes through here, so apps do not have to fork the page
+  /// or invent a second settings screen.
+  final List<Widget>? extraSettings;
+
+  const SettingsPage({super.key, this.extraSettings});
 
   @override
-  _SettingsPageState createState() => _SettingsPageState();
+  State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  /// Shared width for all three settings dropdowns.
+  ///
+  /// Was 190 on two of them and unset on the third, which produced both
+  /// visible defects: Italian's "Tema di sistema" truncated to "Tema di
+  /// sistem", and the language dropdown sitting at a different width from the
+  /// other two. One constant keeps them aligned and stops them drifting apart
+  /// again. 220 fits the longest current option across the shipped locales at
+  /// the default text scale — a much longer translation, or a large system
+  /// font, can still clip, which wants a non-fixed width rather than a bigger
+  /// number.
+  static const double _dropdownWidth = 220;
+
   static const _githubUrl = 'https://github.com/Giuig';
 
   static const _supportOptions = [
@@ -130,7 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Text(l10n.themeMode),
                   trailing: DropdownMenu<ThemeMode>(
                     key: ValueKey(selectedLocale),
-                    width: 190,
+                    width: _dropdownWidth,
                     initialSelection: _selectedThemeMode,
                     requestFocusOnTap: false,
                     onSelected: (ThemeMode? mode) {
@@ -180,7 +201,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Text(l10n.themeAccent),
                   trailing: DropdownMenu<Color>(
                     key: ValueKey(selectedLocale),
-                    width: 190,
+                    width: _dropdownWidth,
                     enabled: !_useMaterialYou,
                     initialSelection: _selectedAccentColor,
                     requestFocusOnTap: false,
@@ -215,8 +236,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   title: Text(l10n.language),
                   trailing: DropdownMenu<Locale>(
+                    width: _dropdownWidth,
                     key: ValueKey(selectedLocale),
-                    width: 160,
                     initialSelection: selectedLocale,
                     requestFocusOnTap: false,
                     onSelected: (Locale? locale) {
@@ -233,6 +254,16 @@ class _SettingsPageState extends State<SettingsPage> {
                         .toList(),
                   ),
                 ),
+
+                // ── App-specific ─────────────────────────────────────────────
+                // Placed after the shared settings and before Support so an
+                // app's own rows read as settings, not as an afterthought
+                // below the footer links.
+                if (widget.extraSettings != null &&
+                    widget.extraSettings!.isNotEmpty) ...[
+                  const Divider(height: 1),
+                  ...widget.extraSettings!,
+                ],
 
                 // ── Support ───────────────────────────────────────────────────
                 const Divider(height: 1),
@@ -251,52 +282,57 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
           // ── Footer ───────────────────────────────────────────────────────
+          // One wrapping row rather than a four-item stack. The old layout was
+          // ~133 logical px: 30 of outer padding, 22 of stacked SizedBox
+          // spacers, ~33 of text, and a 48px row holding one 20px icon.
+          //
+          // The 48 stays — that is Material's minimum tap target, and shrinking
+          // it would trade height for an accessibility regression. Everything
+          // else collapses into the row the icon already needs, so the footer
+          // costs roughly what that button costs and nothing more.
+          //
+          // Wrap, not Row: a long app name or a large system font falls onto a
+          // second line instead of overflowing.
           Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
               children: [
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
-                      style: TextStyle(
-                          fontSize: 12.0, color: colorScheme.onSurface),
-                    ),
-                    Text(", Made with ",
-                        style: TextStyle(
-                            fontSize: 12.0, color: colorScheme.onSurface)),
-                    SvgPicture.string(SvgUtil.flutterSvgString,
-                        width: 17, height: 17),
-                  ],
-                ),
                 Text(
-                  "Version: $globalVersion",
+                  "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
                   style:
                       TextStyle(fontSize: 12.0, color: colorScheme.onSurface),
                 ),
-                const SizedBox(height: 8),
+                Text(
+                  "v$globalVersion",
+                  style:
+                      TextStyle(fontSize: 12.0, color: colorScheme.onSurface),
+                ),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Tooltip(
-                      message: 'GitHub',
-                      child: IconButton(
-                        onPressed: () => _launchUrl(_githubUrl),
-                        icon: SvgPicture.string(
-                          SvgUtil.githubSvgString,
-                          width: 20,
-                          height: 20,
-                          colorFilter: ColorFilter.mode(
-                              colorScheme.onSurfaceVariant, BlendMode.srcIn),
-                        ),
-                      ),
-                    ),
+                    Text("Made with ",
+                        style: TextStyle(
+                            fontSize: 12.0, color: colorScheme.onSurface)),
+                    SvgPicture.string(SvgUtil.flutterSvgString,
+                        width: 15, height: 15),
                   ],
                 ),
-                const SizedBox(height: 4),
+                Tooltip(
+                  message: 'GitHub',
+                  child: IconButton(
+                    onPressed: () => _launchUrl(_githubUrl),
+                    icon: SvgPicture.string(
+                      SvgUtil.githubSvgString,
+                      width: 20,
+                      height: 20,
+                      colorFilter: ColorFilter.mode(
+                          colorScheme.onSurfaceVariant, BlendMode.srcIn),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

@@ -6,7 +6,15 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.5.0
 
 environment:
-  sdk: ">=3.1.2 <4.0.0"
+  # 3.4 is the floor for `web: ^1.1.0`, which lib/src/web_loader_impl.dart now
+  # uses. Checked against the resolved package rather than from memory:
+  # web-1.1.1's own pubspec declares `sdk: ^3.4.0`, and every 1.x has since
+  # 1.0.0. (web-0.5.1 wanted ^3.3.0 — that is where 3.3 came from, and it is
+  # the wrong number for this constraint.)
+  #
+  # The old >=3.1.2 understated the requirement, so a consumer on an older SDK
+  # hit a confusing compile failure instead of a clear resolution error.
+  sdk: ">=3.4.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -17,6 +25,9 @@ dependencies:
   dynamic_color: ^1.8.1
   package_info_plus: ^9.0.0
   flutter_svg: ^2.2.4
+
+  # Replaces the deprecated dart:html in lib/src/web_loader_impl.dart.
+  web: ^1.1.0
   shared_preferences: ^2.5.4
   webview_flutter: ^4.13.1
   url_launcher: ^6.3.2
