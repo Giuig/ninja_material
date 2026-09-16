@@ -15,10 +15,19 @@ class _SupportOption {
 }
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  /// App-specific settings rows, appended after the shared ones and before the
+  /// Support block.
+  ///
+  /// The shared page deliberately owns only what every ninja app has — theme,
+  /// colour, language. Anything specific to one app (tvninja's "always start in
+  /// audio-only", say) comes through here, so apps do not have to fork the page
+  /// or invent a second settings screen.
+  final List<Widget>? extraSettings;
+
+  const SettingsPage({super.key, this.extraSettings});
 
   @override
-  _SettingsPageState createState() => _SettingsPageState();
+  State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
@@ -233,6 +242,16 @@ class _SettingsPageState extends State<SettingsPage> {
                         .toList(),
                   ),
                 ),
+
+                // ── App-specific ─────────────────────────────────────────────
+                // Placed after the shared settings and before Support so an
+                // app's own rows read as settings, not as an afterthought
+                // below the footer links.
+                if (widget.extraSettings != null &&
+                    widget.extraSettings!.isNotEmpty) ...[
+                  const Divider(height: 1),
+                  ...widget.extraSettings!,
+                ],
 
                 // ── Support ───────────────────────────────────────────────────
                 const Divider(height: 1),

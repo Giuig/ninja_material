@@ -1,7 +1,5 @@
-// ignore_for_file: non_constant_identifier_names, prefer_const_constructors, sized_box_for_whitespace
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:provider/provider.dart';
 
 import '../config/global_notifier.dart';
 import '../config/shared_config.dart';
@@ -37,6 +35,13 @@ class FirstPageConfig {
   /// has its own landscape navigation (see [_buildLandscapeTabBar]).
   final bool responsiveNavigation;
 
+  /// App-specific rows appended to the shared [SettingsPage].
+  ///
+  /// Without this there is no way at all for an app to add a preference: the
+  /// settings page is shared and was previously closed, so each app got an
+  /// identical screen or none of its own.
+  final List<Widget>? extraSettings;
+
   const FirstPageConfig({
     required this.destinationsBuilder,
     required this.pages,
@@ -45,6 +50,7 @@ class FirstPageConfig {
     this.sideBySidePlayerBuilder,
     this.hasActivePlayerBuilder,
     this.responsiveNavigation = false,
+    this.extraSettings,
   });
 }
 
@@ -77,7 +83,7 @@ class _FirstPageState extends State<FirstPage> {
 
     _pages = [
       ...widget.config?.pages ?? [],
-      SettingsPage(),
+      SettingsPage(extraSettings: widget.config?.extraSettings),
     ];
 
     debugPrint("🔍 Running in ${kReleaseMode ? 'RELEASE' : 'DEBUG'} mode.");
