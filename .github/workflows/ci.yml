@@ -1,9 +1,8 @@
 name: CI
 
-# Nothing ran on a pull request before this. Three apps pin this package by git
-# ref and have no CI of their own, so a regression here does not fail one app's
-# build — it reaches every app, whenever each next bumps its ref, with a human
-# reading the diff as the only gate.
+# This package's own trigger. The checks themselves live in the shared
+# app-ci.yml alongside build-app.yml / version-bump.yml / web-deploy.yml, so the
+# fleet has exactly one definition of "is this green" rather than one per repo.
 on:
   pull_request:
   push:
@@ -11,28 +10,11 @@ on:
       - main
 
 jobs:
-  analyze-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          # Latest stable rather than a pinned version: this is a library three
-          # apps consume, so it should fail here when a new SDK deprecates
-          # something, not in each app later. Pin `flutter-version` instead if a
-          # stable release ever breaks the build for reasons unrelated to a PR.
-          channel: stable
-          cache: true
-
-      - run: flutter pub get
-
-      # The whole tree is clean, so this is deliberately unscoped — unlike the
-      # apps, where vendored third_party example/test dirs force `analyze lib test`.
-      - run: flutter analyze
-
-      - run: flutter test
-
-# No `dart format --set-exit-if-changed` gate: five files, most of them
-# pre-existing, are not formatter-clean today, so it would fail every PR from the
-# start. Worth adding after a separate formatting pass — not smuggled into one.
+  ci:
+    uses: ./.github/workflows/app-ci.yml
+    with:
+      app-name: ninja_material
+      # This is a package, not an app: no web entrypoint of its own, so there is
+      # nothing for `flutter build web` to compile. The example is exercised by
+      # the package's own tests instead.
+      build-web: false

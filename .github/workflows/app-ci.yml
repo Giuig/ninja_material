@@ -1,0 +1,94 @@
+name: Ninja App CI
+
+# Shared pull-request gate for every ninja app, called from a thin shim in each
+# repo — the same pattern as build-app.yml / version-bump.yml / web-deploy.yml.
+#
+# Naming follows the convention already in this folder: a hyphen means "shared,
+# workflow_call"; an underscore (version_bump.yml) means "this repo's own
+# trigger". Do not add a `pull_request` trigger here — the callers own that.
+#
+# Why this exists: none of the apps had any check on a pull request. The other
+# three shared workflows are all release machinery that fires on tags, a version
+# change or a dispatch, so the only gate on a regression reaching main was a
+# human reading the diff.
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        description: 'App name, used only to label the run'
+        required: true
+        type: string
+      flutter-version:
+        description: >
+          Flutter SDK version. Defaults to the fleet toolchain so every app is
+          checked against the same SDK the owner develops on, and so a run is
+          reproducible months later. Pass a different value to trial an upgrade
+          in one app without moving the others.
+        required: false
+        type: string
+        default: '3.41.5'
+      analyze-paths:
+        description: >
+          Paths given to `flutter analyze`. Deliberately scoped rather than
+          whole-tree: auraninja vendors third_party/flutter_soloud, whose own
+          example and test directories produce ~124 errors that are not the
+          app's code and are not excluded by analysis_options.yaml.
+        required: false
+        type: string
+        default: 'lib test'
+      fatal-infos:
+        description: >
+          Also fail on analyzer infos. Off by default, and that is deliberate:
+          every app carries pre-existing infos (30 in tvninja, 60 in auraninja),
+          so switching this on would make the check red on day one and teach
+          everyone to ignore it. Errors and warnings are ALWAYS fatal. Turn this
+          on per-app once that app reaches zero infos.
+        required: false
+        type: boolean
+        default: false
+      run-tests:
+        description: 'Run `flutter test`.'
+        required: false
+        type: boolean
+        default: true
+      build-web:
+        description: >
+          Compile the web target. On by default because web-only files
+          (conditional imports) are compiled by no other target, so without it
+          web breakage stays invisible until a release — and these apps do ship
+          web builds via web-deploy.yml. Turn off for a package with no web
+          entrypoint.
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  analyze-and-test:
+    name: ${{ inputs.app-name }} — analyze, test, web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ inputs.flutter-version }}
+          channel: 'stable'
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze ${{ inputs.analyze-paths }} ${{ inputs.fatal-infos && '--fatal-infos' || '--no-fatal-infos' }}
+
+      - name: Test
+        if: inputs.run-tests
+        run: flutter test
+
+      - name: Build web
+        if: inputs.build-web
+        run: flutter build web
+
+# No `dart format --set-exit-if-changed` step: no app in the fleet is
+# formatter-clean, so it would fail every PR everywhere from the first run. That
+# wants a per-app formatting pass first, then this can grow a `fatal-format`
+# input the same way `fatal-infos` works.
