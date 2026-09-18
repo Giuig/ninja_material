@@ -136,9 +136,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final colorScheme = theme.colorScheme;
     final selectedLocale = globalCurrentLocale.currentLocale(context);
 
-    return Scaffold(
-      body: Column(
-        children: [
+    // No Scaffold of its own. This page renders inside FirstPage's Scaffold
+    // body, which already supplies the background colour and a Material
+    // ancestor, so the nested one just painted an identical background over
+    // the first — and gave this subtree a second round of inset handling,
+    // which is wrong now that FirstPage insets the rail's content itself.
+    return Column(
+      children: [
           Expanded(
             child: ClipRect(
               child: Material(
@@ -301,7 +305,7 @@ class _SettingsPageState extends State<SettingsPage> {
               spacing: 8,
               children: [
                 Text(
-                  "© $globalCurrentYear ${globalAppName![0].toUpperCase()}${globalAppName!.substring(1).toLowerCase()}",
+                  "© $globalCurrentYear $globalFormattedAppName",
                   style:
                       TextStyle(fontSize: 12.0, color: colorScheme.onSurface),
                 ),
@@ -336,8 +340,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }

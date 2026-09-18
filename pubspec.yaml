@@ -22,7 +22,18 @@ dependencies:
 
   provider: ^6.1.5+1
   cupertino_icons: ^1.0.8
-  dynamic_color: ^1.8.1
+  # Ceiling, not a caret range. 1.9.0's own android/build.gradle.kts uses a
+  # `kotlin { compilerOptions { ... } }` block that the fleet's Kotlin Gradle
+  # plugin (2.1.0, matching tvninja) cannot compile — the Android build dies on
+  # "Unresolved reference: compilerOptions" in a transitive package, naming
+  # nothing in our code. Measured 2026-09-17 against AGP 8.12.0 / Kotlin 2.1.0.
+  #
+  # The apps only escape this today because their committed pubspec.lock files
+  # pin 1.8.1; a library gitignores its lock, so `^1.8.1` left any fresh
+  # resolve — a new consumer, a CI cache miss, a `pub upgrade` — free to pick
+  # 1.9.0 and fail. Lift the ceiling once the fleet moves to a Kotlin plugin
+  # that understands that block.
+  dynamic_color: ">=1.8.1 <1.9.0"
   package_info_plus: ^9.0.0
   flutter_svg: ^2.2.4
 

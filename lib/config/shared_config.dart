@@ -13,6 +13,16 @@ String? globalAppName;
 String? globalVersion;
 String? globalBuildNumber;
 
+/// [globalAppName] with a capital first letter and the rest lower-cased.
+///
+/// The same expression was inlined in two places (the AppBar title and the
+/// settings footer), so a change to how the name is presented had to be made
+/// twice or the two would disagree. Throws the same way the old inline code
+/// did if `globalAppName` is unset, which only happens before `runNinjaApp`
+/// has read the package info.
+String get globalFormattedAppName =>
+    globalAppName![0].toUpperCase() + globalAppName!.substring(1).toLowerCase();
+
 final Map<String, Color> globalThemeColorOptions = {
   'Bulbasaur': Colors.teal.shade500,
   'Charmander': Colors.deepOrange.shade400,

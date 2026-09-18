@@ -71,15 +71,13 @@ class FirstPage extends StatefulWidget {
 class _FirstPageState extends State<FirstPage> {
   int _currentPageIndex = 0;
   late List<Widget> _pages;
-  late List<NavigationDestination> _destinations;
   late String _formattedAppName;
 
   @override
   void initState() {
     super.initState();
 
-    _formattedAppName = globalAppName![0].toUpperCase() +
-        globalAppName!.substring(1).toLowerCase();
+    _formattedAppName = globalFormattedAppName;
 
     _pages = [
       ...widget.config?.pages ?? [],
@@ -98,7 +96,10 @@ class _FirstPageState extends State<FirstPage> {
   /// Compact tab bar shown at the top of the right content panel in landscape.
   /// Replaces the bottom NavigationBar so users can still switch tabs without
   /// rotating back to portrait.
-  Widget _buildLandscapeTabBar(ThemeData theme) {
+  Widget _buildLandscapeTabBar(
+    ThemeData theme,
+    List<NavigationDestination> destinations,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -110,8 +111,8 @@ class _FirstPageState extends State<FirstPage> {
         ),
       ),
       child: Row(
-        children: List.generate(_destinations.length, (index) {
-          final dest = _destinations[index];
+        children: List.generate(destinations.length, (index) {
+          final dest = destinations[index];
           final isSelected = _currentPageIndex == index;
           final color = isSelected
               ? theme.colorScheme.primary
@@ -157,7 +158,7 @@ class _FirstPageState extends State<FirstPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    _destinations = [
+    final destinations = <NavigationDestination>[
       ...widget.config?.destinationsBuilder(context) ?? [],
       NavigationDestination(
         selectedIcon: Icon(Icons.settings),
@@ -204,7 +205,7 @@ class _FirstPageState extends State<FirstPage> {
             child: Column(
               children: [
                 // Compact tab bar replaces the hidden bottom NavigationBar
-                _buildLandscapeTabBar(theme),
+                _buildLandscapeTabBar(theme, destinations),
                 Expanded(
                   child: IndexedStack(
                     index: _currentPageIndex,
@@ -250,7 +251,7 @@ class _FirstPageState extends State<FirstPage> {
             // shared list is mapped here. Doing it inside the package keeps
             // `destinationsBuilder`'s existing signature — apps pass exactly
             // what they pass today.
-            destinations: _destinations
+            destinations: destinations
                 .map((d) => NavigationRailDestination(
                       icon: d.icon,
                       selectedIcon: d.selectedIcon,
@@ -307,7 +308,7 @@ class _FirstPageState extends State<FirstPage> {
                     setState(() => _currentPageIndex = index);
                   },
                   selectedIndex: _currentPageIndex,
-                  destinations: _destinations,
+                  destinations: destinations,
                 ),
               ],
             ),
