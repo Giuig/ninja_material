@@ -41,11 +41,19 @@ void main() {
     WidgetTester tester, {
     required FirstPageConfig cfg,
     required Size size,
+    FakeViewPadding? padding,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0; // physical == logical, so sizes read directly
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    // Set on the view rather than injected as a MediaQuery, so the value
+    // travels the same path a real system inset does.
+    if (padding != null) {
+      tester.view.padding = padding;
+      addTearDown(tester.view.resetPadding);
+    }
 
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -146,6 +154,80 @@ void main() {
       final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
       expect(rail.destinations.length, 2);
       expect(rail.selectedIndex, 0);
+    });
+
+    // bootstrap.dart runs the app edge-to-edge, so the system bars are drawn
+    // OVER it, and in landscape the Android navigation bar sits on a side edge
+    // — left or right depending on which way the phone was turned. Scaffold
+    // insets `bottomNavigationBar` for us but never `body`, which is where the
+    // rail and its content live.
+    //
+    // These four use asymmetric insets (left 24, right 48) so that a wrapper
+    // applying the same padding to both sides cannot pass by coincidence.
+
+    testWidgets('content beside the rail clears a right-edge system bar',
+        (tester) async {
+      // THE regression. Nothing else in the tree protects the content: before
+      // the fix its right edge sat at 1000, flush under the bar.
+      await pumpShell(
+        tester,
+        cfg: config(responsiveNavigation: true),
+        size: const Size(1000, 800),
+        padding: const FakeViewPadding(left: 24, right: 48),
+      );
+
+      expect(tester.getTopRight(find.byType(IndexedStack)).dx, 1000 - 48);
+    });
+
+    testWidgets('content is flush when there are no system insets',
+        (tester) async {
+      // Pairs with the test above, so the 952 there is provably the padding
+      // and not something SafeArea adds unconditionally.
+      await pumpShell(
+        tester,
+        cfg: config(responsiveNavigation: true),
+        size: const Size(1000, 800),
+      );
+
+      expect(tester.getTopRight(find.byType(IndexedStack)).dx, 1000);
+    });
+
+    testWidgets('rail destinations clear a left-edge system bar',
+        (tester) async {
+      // Passes with or without our own wrapping, and that is the point:
+      // NavigationRail already wraps its destinations in a SafeArea of its
+      // own. This pins that behaviour so a future Flutter bump (or someone
+      // restructuring the Row) cannot quietly push the icons under the bar.
+      await pumpShell(
+        tester,
+        cfg: config(responsiveNavigation: true),
+        size: const Size(1000, 800),
+        padding: const FakeViewPadding(left: 24, right: 48),
+      );
+
+      expect(
+        tester.getTopLeft(find.byIcon(Icons.home)).dx,
+        greaterThanOrEqualTo(24),
+      );
+    });
+
+    testWidgets('rail surface stays flush against the screen edge',
+        (tester) async {
+      // Deliberate, and the reason the rail is NOT wrapped in a SafeArea here.
+      // Wrapping it moved the rail's Material inward off the edge (measured:
+      // left 0 -> 24, bottom 400 -> 340) while leaving every destination
+      // exactly where it already was — all cost, no reachability gain. The
+      // system bar is meant to sit on top of an edge-to-edge surface.
+      //
+      // So this failing is the signal that someone re-added that wrapper.
+      await pumpShell(
+        tester,
+        cfg: config(responsiveNavigation: true),
+        size: const Size(1000, 800),
+        padding: const FakeViewPadding(left: 24, right: 48),
+      );
+
+      expect(tester.getTopLeft(find.byType(NavigationRail)).dx, 0);
     });
   });
 
