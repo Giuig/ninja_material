@@ -233,6 +233,13 @@ class _FirstPageState extends State<FirstPage> {
     if (useRail) {
       bodyContent = Row(
         children: [
+          // Deliberately NOT wrapped in a SafeArea: NavigationRail already
+          // wraps its own destinations in one (see navigation_rail.dart —
+          // `left`/`right` by text direction, and `top`/`bottom` omitted so
+          // they default to true). Adding another changes nothing about which
+          // destinations are reachable — measured identical — and only shrinks
+          // the rail's Material off the screen edge, losing the edge-to-edge
+          // surface the system bar is meant to sit on top of.
           NavigationRail(
             selectedIndex: _currentPageIndex,
             onDestinationSelected: (int index) {
@@ -252,7 +259,18 @@ class _FirstPageState extends State<FirstPage> {
                 .toList(),
           ),
           const VerticalDivider(width: 1, thickness: 1),
-          Expanded(child: bodyContent),
+          // The content, however, gets nothing for free. `bootstrap.dart` puts
+          // the app edge-to-edge, so the system bars are drawn OVER it, and
+          // Scaffold insets `bottomNavigationBar` but never `body`. In
+          // landscape the Android navigation bar sits on a side edge, and when
+          // that edge is the right one it lands on this content — nothing else
+          // in the tree protects it.
+          //
+          // `left: false` leaves the left inset alone: the rail is what
+          // occupies that edge, and it handles its own.
+          Expanded(
+            child: SafeArea(left: false, child: bodyContent),
+          ),
         ],
       );
     }
