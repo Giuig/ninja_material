@@ -158,6 +158,7 @@ class _NinjaAppState extends State<_NinjaApp> {
         }
 
         return MaterialApp(
+          scrollBehavior: const _AlwaysVisibleScrollbarBehavior(),
           debugShowCheckedModeBanner: widget.showDebugBanner,
           themeMode: globalCurrentTheme.currentTheme(context),
           theme: ThemeData(
@@ -182,5 +183,55 @@ class _NinjaAppState extends State<_NinjaApp> {
         );
       },
     );
+  }
+}
+
+/// Keeps the scrollbar thumb on screen on desktop instead of fading it in on
+/// hover.
+///
+/// Flutter's [MaterialScrollBehavior] does add a scrollbar on desktop, but with
+/// the default hover-gated thumb. That is fine for a page you already know
+/// scrolls; it is poor for a long list that *is* the screen — driving tvninja's
+/// 320-channel list on desktop web, nothing indicated the list was scrollable,
+/// how long it was, or where you were in it until the cursor drifted to the
+/// right edge.
+///
+/// The platform split below is copied verbatim from
+/// `MaterialScrollBehavior.buildScrollbar` (Flutter's
+/// `material/app.dart`): horizontal axes are left alone, desktop gets a
+/// scrollbar, and **android/fuchsia/iOS deliberately get none**. Forcing visible
+/// scrollbars onto touch platforms would be a regression on the phones these
+/// apps are mostly used on, so only `thumbVisibility` differs from the SDK.
+class _AlwaysVisibleScrollbarBehavior extends MaterialScrollBehavior {
+  const _AlwaysVisibleScrollbarBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    if (axisDirectionToAxis(details.direction) != Axis.vertical) return child;
+
+    switch (getPlatform(context)) {
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+        return Scrollbar(
+          controller: details.controller,
+          // Only force the thumb when there is a controller to hang it on.
+          // `Scrollbar` with `thumbVisibility: true` throws if it cannot resolve
+          // a ScrollPosition, and the SDK asserts a non-null controller on this
+          // branch — so where a consumer has not supplied one, fall back to the
+          // default hover behaviour rather than risk throwing in an app we have
+          // not audited.
+          thumbVisibility: details.controller != null,
+          child: child,
+        );
+      case TargetPlatform.android:
+      case TargetPlatform.fuchsia:
+      case TargetPlatform.iOS:
+        return child;
+    }
   }
 }
