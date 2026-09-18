@@ -73,6 +73,26 @@ class _FirstPageState extends State<FirstPage> {
   late List<Widget> _pages;
   late String _formattedAppName;
 
+  /// Keeps every page's `State` alive when the layout re-parents the stack.
+  ///
+  /// `bodyContent` below is built one way and then, when the rail turns on,
+  /// **wrapped in an extra `Row`**. That moves the `IndexedStack` to a different
+  /// position in the element tree, and Flutter cannot match an element across a
+  /// changed position — so it discards the subtree and builds a fresh one,
+  /// taking every page's `State` with it.
+  ///
+  /// Measured in tvninja before this key existed: open a playlist's channel
+  /// list in portrait, rotate past the 600px breakpoint, and the page is back
+  /// at the playlist list — the selection, the search box and the group filter
+  /// all reset. It looked like a navigation bug in the app; it was this.
+  ///
+  /// A `GlobalKey` makes the element *move* instead of being recreated. One key
+  /// is shared by both branches below deliberately: they are mutually exclusive
+  /// (`useRail` requires `!useSideBySide`), so it is never in the tree twice,
+  /// and sharing it means switching to the side-by-side layout preserves state
+  /// too.
+  final GlobalKey _pagesKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -208,6 +228,7 @@ class _FirstPageState extends State<FirstPage> {
                 _buildLandscapeTabBar(theme, destinations),
                 Expanded(
                   child: IndexedStack(
+                    key: _pagesKey,
                     index: _currentPageIndex,
                     children: _pages,
                   ),
@@ -223,6 +244,7 @@ class _FirstPageState extends State<FirstPage> {
           if (topBar != null) topBar,
           Expanded(
             child: IndexedStack(
+              key: _pagesKey,
               index: _currentPageIndex,
               children: _pages,
             ),
