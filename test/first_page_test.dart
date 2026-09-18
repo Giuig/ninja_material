@@ -23,12 +23,13 @@ void main() {
     List<Widget>? extraSettings,
     Widget? bottomBar,
     bool hasActivePlayer = false,
+    List<Widget> pages = const [Center(child: Text('PAGE'))],
   }) =>
       FirstPageConfig(
         destinationsBuilder: (_) => const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
         ],
-        pages: const [Center(child: Text('PAGE'))],
+        pages: pages,
         responsiveNavigation: responsiveNavigation,
         extraSettings: extraSettings,
         bottomBar: bottomBar,
@@ -256,4 +257,69 @@ void main() {
       expect(find.text('APP SPECIFIC ROW', skipOffstage: false), findsNothing);
     });
   });
+
+  group('FirstPage page state', () {
+    // Regression: turning the rail on wraps bodyContent in an extra Row, which
+    // moves the IndexedStack in the element tree. Without a GlobalKey Flutter
+    // cannot match it across that move and rebuilds the subtree, silently
+    // resetting every page's State. tvninja showed this as "rotating loses the
+    // playlist you opened", which read like a navigation bug in the app.
+    testWidgets('page State survives crossing the rail breakpoint',
+        (tester) async {
+      await pumpShell(
+        tester,
+        cfg: config(responsiveNavigation: true, pages: const [_Counter()]),
+        size: const Size(400, 800),
+      );
+
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+
+      await tester.tap(find.text('count: 0'));
+      await tester.pumpAndSettle();
+      expect(find.text('count: 1'), findsOneWidget);
+
+      // Cross 600px: rail on, layout re-parented.
+      tester.view.physicalSize = const Size(1000, 800);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(
+        find.text('count: 1'),
+        findsOneWidget,
+        reason: 'page State must survive the rail layout switch',
+      );
+
+      // And back again, since the wrap is removed on the way down.
+      tester.view.physicalSize = const Size(400, 800);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(
+        find.text('count: 1'),
+        findsOneWidget,
+        reason: 'page State must survive dropping back below the breakpoint',
+      );
+    });
+  });
+}
+
+/// A page that owns State, so a rebuild which discards it is observable.
+class _Counter extends StatefulWidget {
+  const _Counter();
+
+  @override
+  State<_Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<_Counter> {
+  int _n = 0;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: GestureDetector(
+          onTap: () => setState(() => _n++),
+          child: Text('count: $_n'),
+        ),
+      );
 }
