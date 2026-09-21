@@ -81,15 +81,15 @@
     'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
     'opacity:1;transition:opacity .25s ease-out}' +
     '#' + id + '.ninja-hide{opacity:0;pointer-events:none}' +
-    '#' + id + ' svg{width:44px;height:44px;animation:ninja-rot 1.6s linear infinite}' +
-    '#' + id + ' circle{fill:none;stroke:' + accent + ';stroke-width:4;' +
-    'stroke-linecap:round;animation:ninja-dash 1.4s ease-in-out infinite}' +
+    // Shuriken: eased rather than linear rotation, so each turn reads as a
+    // wind-up and release (a thrown star) instead of a machine spinning.
+    '#' + id + ' svg{width:46px;height:46px;' +
+    'animation:ninja-rot 2.4s cubic-bezier(.6,0,.4,1) infinite}' +
+    '#' + id + ' .ninja-blade{fill:' + accent + '}' +
+    '#' + id + ' .ninja-hub{fill:' + bg + '}' +
     '#' + id + ' .ninja-label{color:' + accent + ';font-size:13px;' +
     'letter-spacing:.04em;opacity:.7}' +
     '@keyframes ninja-rot{to{transform:rotate(360deg)}}' +
-    '@keyframes ninja-dash{0%{stroke-dasharray:1 120;stroke-dashoffset:0}' +
-    '50%{stroke-dasharray:90 120;stroke-dashoffset:-25}' +
-    '100%{stroke-dasharray:90 120;stroke-dashoffset:-114}}' +
     '@media(prefers-reduced-motion:reduce){#' + id + ' *{animation:none!important}' +
     '#' + id + '{transition:none}}';
 
@@ -102,7 +102,9 @@
     var el = document.createElement('div');
     el.id = id;
     el.innerHTML =
-      '<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"></circle></svg>' +
+      '<svg viewBox="0 0 48 48" aria-hidden="true">' +
+      '<path class="ninja-blade" d="M24 2 L30 18 L46 24 L30 30 L24 46 L18 30 L2 24 L18 18 Z"/>' +
+      '<circle class="ninja-hub" cx="24" cy="24" r="4.5"/></svg>' +
       '<div class="ninja-label">' + (d.label || 'Loading…') + '</div>';
     document.body.insertBefore(el, document.body.firstChild);
   }
