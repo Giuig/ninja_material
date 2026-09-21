@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +9,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config/shared_config.dart';
 import 'pages/first_page.dart';
@@ -157,6 +160,8 @@ class _NinjaAppState extends State<_NinjaApp> {
           );
         }
 
+        _persistLoaderPalette(light, dark);
+
         return MaterialApp(
           scrollBehavior: const _AlwaysVisibleScrollbarBehavior(),
           debugShowCheckedModeBanner: widget.showDebugBanner,
@@ -234,4 +239,54 @@ class _AlwaysVisibleScrollbarBehavior extends MaterialScrollBehavior {
         return child;
     }
   }
+}
+
+
+String _loaderHex(Color c) =>
+    '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+
+/// Last payload written, so a rebuild does not hit storage every frame.
+String? _lastLoaderPalette;
+
+/// Publishes the resolved [ColorScheme]s for the web loading screen.
+///
+/// The HTML loader in `assets/web/ninja_loader.js` paints before any Dart
+/// runs, so it cannot ask Flutter what the theme resolved to. It used to
+/// guess: it read `customAccentColor` and used that raw, but that key holds
+/// the SEED, and `ColorScheme.fromSeed` moves it a long way -- tvninja's seed
+/// is #5c6bc0 while its dark primary is #bac3ff. The background was never
+/// derived at all, so a seeded surface like auraninja's #12140e showed as a
+/// neutral #131316.
+///
+/// Writing the resolved scheme out sidesteps the whole problem: no tonal
+/// palette maths in JavaScript, and it is exact rather than close. It also
+/// covers the Material You branch above for free, since this runs after the
+/// choice between dynamic and seeded schemes has already been made.
+///
+/// Web only -- this exists purely to feed the HTML loader, and native has a
+/// platform launch screen instead.
+///
+/// The loader reads this one render behind: a brand-new visitor, or one who
+/// just changed their accent, sees the `data-*` fallback for a single load.
+void _persistLoaderPalette(ColorScheme light, ColorScheme dark) {
+  if (!kIsWeb) return;
+  final payload = jsonEncode({
+    'l': {
+      'p': _loaderHex(light.primary),
+      's': _loaderHex(light.secondary),
+      'b': _loaderHex(light.surface),
+      'o': _loaderHex(light.outline),
+    },
+    'd': {
+      'p': _loaderHex(dark.primary),
+      's': _loaderHex(dark.secondary),
+      'b': _loaderHex(dark.surface),
+      'o': _loaderHex(dark.outline),
+    },
+  });
+  if (payload == _lastLoaderPalette) return;
+  _lastLoaderPalette = payload;
+  SharedPreferences.getInstance()
+      .then((prefs) => prefs.setString('loaderPalette', payload))
+      .catchError((_) => false);
 }

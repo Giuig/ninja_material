@@ -7,8 +7,8 @@
 //
 //   <script src="assets/packages/ninja_material/assets/web/ninja_loader.js"
 //           data-prefix="auraninja."
-//           data-bg-light="#faf9fd"     data-bg-dark="#131316"
-//           data-accent-light="#4a5c92" data-accent-dark="#b3c5ff"></script>
+//           data-bg-light="#f9faef"     data-bg-dark="#12140e"
+//           data-accent-light="#4b662c" data-accent-dark="#b1d18a"></script>
 //
 // It must be in <head> and synchronous. A head script blocks first paint, so
 // the page's very first paint already carries the right background -- no flash
@@ -19,21 +19,27 @@
 // Removal is driven by the app's flutter_bootstrap.js:
 //   if (window.ninjaLoader) window.ninjaLoader.hide();
 //
-// --- Theme awareness -------------------------------------------------------
-// Reads the user's real stored theme so the loader matches the app that is
-// about to appear, rather than the app's compiled-in default.
+// --- Colours ---------------------------------------------------------------
+// Preferred source is `loaderPalette`, which bootstrap.dart writes after it
+// resolves the real ColorScheme (see _persistLoaderPalette there). That is
+// exact, and covers the Material You branch for free, because Flutter has
+// already chosen by the time it is written.
 //
-// shared_preferences_web 2.4.3 stores in localStorage with plain json.encode,
-// so these are readable synchronously before any Dart runs. The default key
+// The data-* attributes are the FIRST-RUN fallback only: nothing is stored
+// until the app has rendered once. Set them to that app's real resolved
+// colours rather than guessing -- ColorScheme.fromSeed moves a seed a long way
+// (a grey seed lands on cyan), so eyeballed values reproduce exactly the
+// mismatch this file exists to remove.
+//
+// --- Storage ---------------------------------------------------------------
+// shared_preferences_web stores in localStorage with plain json.encode, so all
+// of this is readable synchronously before any Dart runs. The default key
 // prefix is `flutter.`, but every ninja app calls
 // `SharedPreferences.setPrefix('<app>.')` on web, because all apps share the
 // origin https://giuig.github.io and storage is scoped to the ORIGIN, not the
 // path. setPrefix REPLACES `flutter.`, it does not extend it -- hence
 // data-prefix, which must match that app's main.dart exactly. Get it wrong and
 // the loader silently falls back to defaults rather than failing loudly.
-//
-// The data-* colours remain the first-run fallback: nothing is stored until
-// the user actually changes a setting.
 
 (function () {
   var s = document.currentScript;
@@ -51,10 +57,6 @@
     }
   }
 
-  // Localised label. Mirrors locale_notifier.dart, which reads the stored
-  // 'locale' key and otherwise falls back to the platform locale. Strings are
-  // the ones tvninja already ships for its `loading` key, so the loader and
-  // the app say the same word rather than two translations of it.
   var LABELS = {
     en: 'Loading...',
     de: 'Laden...',
@@ -74,61 +76,112 @@
   // explicit override defers to the OS, which mirrors ThemeMode.system.
   var dark = mode === 'dark' || (mode !== 'light' && systemDark);
 
-  var bg = dark ? (d.bgDark || '#131316') : (d.bgLight || '#faf9fd');
-  var accent = dark ? (d.accentDark || '#b3c5ff') : (d.accentLight || '#4a5c92');
-
-  // customAccentColor is stored as an ARGB int (Color.toARGB32). It is the
-  // SEED Flutter feeds to ColorScheme.fromSeed, not the tone it finally
-  // renders, so this is close rather than identical - near enough that there
-  // is no visible jump at handover.
   var lang = pref('locale');
   if (typeof lang !== 'string' || !LABELS[lang]) {
-    // navigator.language is 'it-IT' etc.; the stored key is a bare language
-    // code, so take the primary subtag either way.
+    // navigator.language is 'it-IT'; the stored key is a bare language code,
+    // so take the primary subtag either way.
     lang = ((navigator.language || 'en').split('-')[0] || 'en').toLowerCase();
   }
   var label = d.label || LABELS[lang] || LABELS.en;
 
-  var argb = pref('customAccentColor');
-  if (typeof argb === 'number' && isFinite(argb)) {
-    accent = '#' + (argb & 0xFFFFFF).toString(16).padStart(6, '0');
+  var bg = dark ? (d.bgDark || '#131316') : (d.bgLight || '#faf9fd');
+  var primary = dark ? (d.accentDark || '#b3c5ff') : (d.accentLight || '#4a5c92');
+  var secondary = primary;
+  var outline = primary;
+  var exact = false;
+
+  // setString stores a JSON string and shared_preferences json-encodes it
+  // again, so the stored value is JSON inside JSON. pref() unwraps one layer
+  // and leaves a string; this parses the second.
+  var rawPalette = pref('loaderPalette');
+  if (typeof rawPalette === 'string') {
+    try {
+      var pal = JSON.parse(rawPalette);
+      var side = dark ? pal.d : pal.l;
+      if (side && side.p) {
+        primary = side.p;
+        secondary = side.s || side.p;
+        bg = side.b || bg;
+        outline = side.o || side.p;
+        exact = true;
+      }
+    } catch (e) { /* malformed: keep the data-* fallback */ }
   }
 
   var css =
     'html,body{margin:0;padding:0;height:100%}' +
     'body{background:' + bg + '}' +
     '#' + id + '{position:fixed;inset:0;display:flex;flex-direction:column;' +
-    'align-items:center;justify-content:center;' + 'gap:clamp(10px,2.6vmin,22px);background:' + bg + ';' +
+    'align-items:center;justify-content:center;overflow:hidden;' +
+    'gap:clamp(12px,3vmin,26px);background:' + bg + ';' +
     'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
     'opacity:1;transition:opacity .25s ease-out}' +
     '#' + id + '.ninja-hide{opacity:0;pointer-events:none}' +
-    // Shuriken: eased rather than linear rotation, so each turn reads as a
-    // wind-up and release (a thrown star) instead of a machine spinning.
-    // Sized in vmin, not px, so it scales with whatever viewport it is in.
-    // In an iframe, vmin resolves against the IFRAME's own viewport, so an
-    // embedded app gets a correctly-sized star with the loader knowing
-    // nothing about being embedded. clamp keeps both ends sane: never a dot
-    // in a small frame, never enormous on a large desktop.
-    '#' + id + ' svg{width:clamp(44px,14vmin,96px);' + 'height:clamp(44px,14vmin,96px);' +
-    'animation:ninja-rot 2.4s cubic-bezier(.6,0,.4,1) infinite}' +
-    '#' + id + ' .ninja-blade{fill:' + accent + '}' +
+
+    // Sized in vmin so it scales with whatever viewport it is in. Inside an
+    // iframe vmin resolves against the IFRAME's viewport, so an embedded app
+    // is handled without the loader knowing it is embedded.
+    '#' + id + ' .ninja-star{width:clamp(56px,18vmin,124px);' +
+    'height:clamp(56px,18vmin,124px);position:relative;z-index:2;' +
+    'animation:ninja-rot 1.6s linear infinite}' +
+    '#' + id + ' .ninja-blade{fill:' + primary + '}' +
     '#' + id + ' .ninja-hub{fill:' + bg + '}' +
-    '#' + id + ' .ninja-label{color:' + accent + ';' + 'font-size:clamp(11px,2.4vmin,15px);' +
-    'letter-spacing:.04em;opacity:.7}' +
+    '#' + id + ' .ninja-label{color:' + primary + ';position:relative;z-index:2;' +
+    'font-size:clamp(13px,3vmin,19px);letter-spacing:.04em;opacity:.7}' +
     '@keyframes ninja-rot{to{transform:rotate(360deg)}}' +
-    '@media(prefers-reduced-motion:reduce){#' + id + ' *{animation:none!important}' +
-    '#' + id + '{transition:none}}';
+
+    // Wind: purely horizontal, right to left, tightly staggered. Only
+    // transform and opacity animate, so this stays on the compositor rather
+    // than competing with the main thread while it parses main.dart.js.
+    '#' + id + ' .ninja-fx{position:absolute;inset:0;pointer-events:none;z-index:1}' +
+    '#' + id + ' .ninja-fx i{position:absolute;right:-16%;height:2px;' +
+    'border-radius:2px;background:' + outline + ';opacity:0;' +
+    'animation:ninja-gust 1.15s linear infinite}' +
+    '#' + id + ' .ninja-fx svg{position:absolute;right:-8%;' +
+    'width:clamp(11px,2.6vmin,18px);height:clamp(11px,2.6vmin,18px);' +
+    'opacity:0;animation:ninja-blow 1.7s linear infinite}' +
+    '#' + id + ' .ninja-fx svg path{fill:' + secondary + '}' +
+    '@keyframes ninja-gust{0%{transform:translateX(0);opacity:0}' +
+    '15%{opacity:.8}75%{opacity:.5}100%{transform:translateX(-135vw);opacity:0}}' +
+    '@keyframes ninja-blow{0%{transform:translateX(0) rotate(0);opacity:0}' +
+    '12%{opacity:.9}55%{transform:translateX(-60vw) rotate(260deg)}' +
+    '100%{transform:translateX(-125vw) rotate(520deg);opacity:0}}' +
+
+    // Reduced motion: drop the weather entirely and stop the star, leaving a
+    // clean static mark rather than a slower version of the same thing.
+    '@media(prefers-reduced-motion:reduce){#' + id + ' .ninja-fx{display:none}' +
+    '#' + id + ' *{animation:none!important}#' + id + '{transition:none}}';
 
   var style = document.createElement('style');
   style.textContent = css;
   (document.head || document.documentElement).appendChild(style);
 
+  // [top%, animation-delay s, width%] -- A's flat layout at E's stagger.
+  var GUSTS = [
+    [18, 0, 13], [30, 0.06, 7], [44, 0.12, 11], [58, 0.18, 6],
+    [70, 0.24, 10], [82, 0.3, 5], [8, 0.36, 9]
+  ];
+  var LEAVES = [[26, 0.15], [60, 0.6], [40, 1.05], [74, 1.5]];
+  var LEAF = 'M8 1 C13 4 14 10 8 15 C2 10 3 4 8 1 Z';
+
   function build() {
     if (document.getElementById(id)) return;
+    var fx = '';
+    var i;
+    for (i = 0; i < GUSTS.length; i++) {
+      fx += '<i style="top:' + GUSTS[i][0] + '%;animation-delay:' + GUSTS[i][1] +
+            's;width:' + GUSTS[i][2] + '%"></i>';
+    }
+    for (i = 0; i < LEAVES.length; i++) {
+      fx += '<svg viewBox="0 0 16 16" style="top:' + LEAVES[i][0] +
+            '%;animation-delay:' + LEAVES[i][1] + 's"><path d="' + LEAF + '"/></svg>';
+    }
+
     var el = document.createElement('div');
     el.id = id;
     el.innerHTML =
-      '<svg viewBox="0 0 48 48" aria-hidden="true">' +
+      '<div class="ninja-fx" aria-hidden="true">' + fx + '</div>' +
+      '<svg class="ninja-star" viewBox="0 0 48 48" aria-hidden="true">' +
       '<path class="ninja-blade" d="M24 2 L30 18 L46 24 L30 30 L24 46 L18 30 L2 24 L18 18 Z"/>' +
       '<circle class="ninja-hub" cx="24" cy="24" r="4.5"/></svg>' +
       '<div class="ninja-label">' + label + '</div>';
@@ -142,7 +195,10 @@
   else document.addEventListener('DOMContentLoaded', build);
 
   window.ninjaLoader = {
-    resolved: { dark: dark, accent: accent, background: bg, prefix: prefix, lang: lang, label: label },
+    resolved: {
+      dark: dark, primary: primary, secondary: secondary, outline: outline,
+      background: bg, prefix: prefix, lang: lang, label: label, exact: exact
+    },
     hide: function () {
       var el = document.getElementById(id);
       if (!el) return;
