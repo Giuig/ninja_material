@@ -236,14 +236,20 @@ class _FirstPageState extends State<FirstPage> {
         (widget.config?.responsiveNavigation ?? false) &&
         MediaQuery.of(context).size.width >= 600;
 
-    // With the flag off this is exactly `_pages` — same list, same
-    // instances — so the widget tree is unchanged for every app that has
-    // not opted in. See FirstPageConfig.nestedNavigation.
+    // With `nestedNavigation` off, each entry is the app's own page widget —
+    // no `Navigator`, no `NavigatorPopHandler`. See
+    // FirstPageConfig.nestedNavigation.
+    //
+    // Every entry is wrapped in a `TickerMode` regardless of that flag; see
+    // the comment on the wrapper below for why. (This used to return `_pages`
+    // verbatim when the flag was off, and the note here promised an unchanged
+    // widget tree for apps that had not opted in — that promise is what let
+    // hidden tabs keep animating, so it is deliberately no longer true.)
     final nestedNavigation = widget.config?.nestedNavigation ?? false;
-    final stackPages = !nestedNavigation
-        ? _pages
-        : List<Widget>.generate(_pages.length, (i) {
-            return NavigatorPopHandler(
+    final stackPages = List<Widget>.generate(_pages.length, (i) {
+      final page = !nestedNavigation
+          ? _pages[i]
+          : NavigatorPopHandler(
               // Only the visible tab may veto back. This is the whole reason
               // the wrapper exists — a hidden IndexedStack child stays
               // mounted (Visibility(maintainState: true)), and an
@@ -260,7 +266,28 @@ class _FirstPageState extends State<FirstPage> {
                 ),
               ),
             );
-          });
+
+      // Mute tickers on tabs the user cannot see.
+      //
+      // `IndexedStack` wraps every child in `Visibility(maintainAnimation:
+      // true)`, and `Visibility` only inserts a `TickerMode` when
+      // `maintainAnimation` is *false* — so by default a hidden tab's
+      // `AnimationController`s keep ticking and keep scheduling frames, for
+      // the whole life of the app. Measured on auraninja 1.7.4 before this
+      // wrapper: a completely static screen with nothing playing rendered a
+      // continuous 60 fps at 4.5% CPU on Android and 60 fps on web, because
+      // the visualizer page's ticker runs from launch whether or not its tab
+      // was ever opened.
+      //
+      // `TickerProviderStateMixin` mutes its tickers when `TickerMode` is
+      // off, and `Ticker.shouldScheduleTick` is `!muted && isActive &&
+      // !scheduled`, so a muted ticker stops requesting frames entirely.
+      //
+      // This affects Flutter tickers only — audio and video keep playing,
+      // since ExoPlayer/media_kit/just_audio do not drive playback from a
+      // `Ticker`.
+      return TickerMode(enabled: i == _currentPageIndex, child: page);
+    });
 
     Widget bodyContent;
     if (useSideBySide) {
