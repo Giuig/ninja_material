@@ -52,6 +52,12 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  assets:
+    # Shipped to consumers as a package asset so the web loading screen exists
+    # once for the whole fleet. Lands in a consumer's build at
+    # build/web/assets/packages/ninja_material/assets/web/ninja_loader.js
+    - assets/web/ninja_loader.js
+
   fonts:
   - family: The Hand
     fonts:

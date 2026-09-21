@@ -1,19 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
@@ -21,94 +8,32 @@
   <meta name="description" content="A new Flutter project.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Matches the loader background below, so the browser chrome does not
-       flash a different colour than the page while loading. -->
-  <meta name="theme-color" content="#faf9fd" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#131316" media="(prefers-color-scheme: dark)">
-
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="ninja_material">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ninja_material</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- ===== ninja shared web loader =====================================
-       Inline on purpose: this must paint on the first byte, before any
-       network request resolves. An external stylesheet would add a round
-       trip and defeat the whole point.
+  <!-- Shared loading screen. In <head> and NOT async on purpose: a head
+       script blocks first paint, so the first paint already carries the right
+       background instead of flashing white and being corrected a frame later.
 
-       Flutter appends its host element to <body> after this markup, so the
-       loader stays underneath until flutter_bootstrap.js fades it out in
-       onEntrypointLoaded.
-       ================================================================== -->
-  <style>
-    :root {
-      --ninja-bg: #faf9fd;
-      --ninja-fg: #1b1b1f;
-      --ninja-track: rgba(0, 0, 0, .12);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --ninja-bg: #131316;
-        --ninja-fg: #e5e2e9;
-        --ninja-track: rgba(255, 255, 255, .14);
-      }
-    }
-    html, body { margin: 0; padding: 0; height: 100%; }
-    /* The single most important line: without it the pre-Dart window is
-       browser-default white, which is what reads as "broken" in dark mode. */
-    body { background: var(--ninja-bg); }
+       NOTE THE PATH. This is the package building ITSELF, so its own assets
+       land at `assets/assets/...`. A consuming app gets the same file at
+       `assets/packages/ninja_material/assets/web/ninja_loader.js` instead --
+       copying this line verbatim into an app will 404. The app-side snippet
+       is documented at the top of ninja_loader.js.
 
-    #ninja-loader {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      background: var(--ninja-bg);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      opacity: 1;
-      transition: opacity .25s ease-out;
-    }
-    #ninja-loader.ninja-hide { opacity: 0; pointer-events: none; }
-
-    #ninja-loader .ninja-spinner {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: 3px solid var(--ninja-track);
-      border-top-color: var(--ninja-fg);
-      animation: ninja-spin .8s linear infinite;
-    }
-    @keyframes ninja-spin { to { transform: rotate(360deg); } }
-
-    #ninja-loader .ninja-label {
-      color: var(--ninja-fg);
-      font-size: 14px;
-      letter-spacing: .02em;
-      opacity: .65;
-    }
-
-    /* Respect reduced-motion: keep the loader, drop the spin. */
-    @media (prefers-reduced-motion: reduce) {
-      #ninja-loader .ninja-spinner { animation: none; }
-      #ninja-loader { transition: none; }
-    }
-  </style>
+       No data-prefix here: the example app does not call
+       SharedPreferences.setPrefix, so it keeps the default `flutter.`. -->
+  <script src="assets/assets/web/ninja_loader.js"
+          data-bg-light="#faf9fd" data-bg-dark="#131316"
+          data-accent-light="#4a5c92" data-accent-dark="#b3c5ff"></script>
 </head>
 <body>
-  <div id="ninja-loader">
-    <div class="ninja-spinner"></div>
-    <div class="ninja-label">Loading&#8230;</div>
-  </div>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
