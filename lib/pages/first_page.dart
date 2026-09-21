@@ -35,6 +35,23 @@ class FirstPageConfig {
   /// has its own landscape navigation (see [_buildLandscapeTabBar]).
   final bool responsiveNavigation;
 
+  /// Opt in to a private [Navigator] per tab, so a route pushed inside a tab
+  /// has something for the system back button to pop instead of exiting the
+  /// app.
+  ///
+  /// Defaults to **false** so existing apps are byte-for-byte unchanged until
+  /// they ask for it — this is a shared package, and where a plain
+  /// `Navigator.push` lands (inside the tab, under the bottom bar, instead of
+  /// covering it) is not something an app should inherit without deciding.
+  /// Measured across the fleet: auraninja has one `Navigator.push` site,
+  /// decisioninja none, tvninja three, and nothing today uses
+  /// `rootNavigator` — turning this on unconditionally would silently
+  /// relocate auraninja's one push.
+  ///
+  /// Only the visible tab's nested [Navigator] is allowed to veto a system
+  /// back press; a hidden tab's stack is left untouched.
+  final bool nestedNavigation;
+
   /// App-specific rows appended to the shared [SettingsPage].
   ///
   /// Without this there is no way at all for an app to add a preference: the
@@ -50,6 +67,7 @@ class FirstPageConfig {
     this.sideBySidePlayerBuilder,
     this.hasActivePlayerBuilder,
     this.responsiveNavigation = false,
+    this.nestedNavigation = false,
     this.extraSettings,
   });
 }
@@ -93,6 +111,12 @@ class _FirstPageState extends State<FirstPage> {
   /// too.
   final GlobalKey _pagesKey = GlobalKey();
 
+  /// One nested-Navigator key per entry in [_pages] (including the appended
+  /// [SettingsPage]), used only when [FirstPageConfig.nestedNavigation] is
+  /// on. Allocated once in [initState] rather than per build, since a
+  /// [GlobalKey] must stay stable across the widget's lifetime.
+  late final List<GlobalKey<NavigatorState>> _tabNavigatorKeys;
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +127,9 @@ class _FirstPageState extends State<FirstPage> {
       ...widget.config?.pages ?? [],
       SettingsPage(extraSettings: widget.config?.extraSettings),
     ];
+
+    _tabNavigatorKeys =
+        List.generate(_pages.length, (_) => GlobalKey<NavigatorState>());
 
     debugPrint("🔍 Running in ${kReleaseMode ? 'RELEASE' : 'DEBUG'} mode.");
 
@@ -209,6 +236,32 @@ class _FirstPageState extends State<FirstPage> {
         (widget.config?.responsiveNavigation ?? false) &&
         MediaQuery.of(context).size.width >= 600;
 
+    // With the flag off this is exactly `_pages` — same list, same
+    // instances — so the widget tree is unchanged for every app that has
+    // not opted in. See FirstPageConfig.nestedNavigation.
+    final nestedNavigation = widget.config?.nestedNavigation ?? false;
+    final stackPages = !nestedNavigation
+        ? _pages
+        : List<Widget>.generate(_pages.length, (i) {
+            return NavigatorPopHandler(
+              // Only the visible tab may veto back. This is the whole reason
+              // the wrapper exists — a hidden IndexedStack child stays
+              // mounted (Visibility(maintainState: true)), and an
+              // unconditional PopScope in it would still veto the app-level
+              // pop even while offstage.
+              enabled: i == _currentPageIndex,
+              onPopWithResult: (_) =>
+                  _tabNavigatorKeys[i].currentState?.maybePop(),
+              child: Navigator(
+                key: _tabNavigatorKeys[i],
+                onGenerateRoute: (settings) => MaterialPageRoute(
+                  builder: (_) => _pages[i],
+                  settings: settings,
+                ),
+              ),
+            );
+          });
+
     Widget bodyContent;
     if (useSideBySide) {
       // Cap video at 480px so it doesn't overwhelm content on tablets/wide screens
@@ -230,7 +283,7 @@ class _FirstPageState extends State<FirstPage> {
                   child: IndexedStack(
                     key: _pagesKey,
                     index: _currentPageIndex,
-                    children: _pages,
+                    children: stackPages,
                   ),
                 ),
               ],
@@ -246,7 +299,7 @@ class _FirstPageState extends State<FirstPage> {
             child: IndexedStack(
               key: _pagesKey,
               index: _currentPageIndex,
-              children: _pages,
+              children: stackPages,
             ),
           ),
         ],
