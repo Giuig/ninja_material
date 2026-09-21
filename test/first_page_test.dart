@@ -258,6 +258,107 @@ void main() {
     });
   });
 
+  group('nestedNavigation flag', () {
+    // Regression coverage for the reported bug: drilling into a playlist was
+    // not real navigation, so the system back button had nothing to pop and
+    // exited the app instead. With the flag on, each tab gets its own
+    // Navigator, and only the VISIBLE tab may veto a system back — a hidden
+    // tab's PopScope must not, since IndexedStack keeps it mounted
+    // (Visibility(maintainState: true)) even while offstage.
+    FirstPageConfig nestedConfig() => FirstPageConfig(
+          destinationsBuilder: (_) => const [
+            NavigationDestination(icon: Icon(Icons.filter_1), label: 'T0'),
+            NavigationDestination(icon: Icon(Icons.filter_2), label: 'T1'),
+          ],
+          pages: const [_TabRoot('TAB0'), _TabRoot('TAB1')],
+          nestedNavigation: true,
+        );
+
+    testWidgets(
+        'a route pushed on a hidden tab is not vetoed and its stack survives',
+        (tester) async {
+      await pumpShell(tester, cfg: nestedConfig(), size: const Size(400, 800));
+
+      // Switch to tab 1 and push a route on its own nested Navigator.
+      await tester.tap(find.text('T1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('PUSH'));
+      await tester.pumpAndSettle();
+      expect(find.text('TAB1 PUSHED'), findsOneWidget);
+
+      // Switch back to tab 0. Tab 1 stays mounted, offstage, with its pushed
+      // route still on its own Navigator's stack.
+      await tester.tap(find.text('T0'));
+      await tester.pumpAndSettle();
+
+      // FirstPage's own BuildContext sits in the outer route (the one all
+      // per-tab PopScopes register with) but outside every nested Navigator,
+      // so its popDisposition reflects whether ANY of them currently veto.
+      final outerRoute =
+          ModalRoute.of(tester.element(find.byType(FirstPage)))!;
+      expect(
+        outerRoute.popDisposition,
+        isNot(RoutePopDisposition.doNotPop),
+        reason: 'a hidden tab must not be able to veto the app-level pop',
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      // The app is still here — nothing swallowed the back press meant for
+      // the app level, and nothing vetoed it either.
+      expect(find.byType(FirstPage), findsOneWidget);
+
+      // Tab 1's stack is untouched by a pop it did not own.
+      await tester.tap(find.text('T1'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('TAB1 PUSHED'),
+        findsOneWidget,
+        reason: "a hidden tab's stack must not react to a pop it did not own",
+      );
+    });
+
+    testWidgets('back on the visible tab pops its route, not the app',
+        (tester) async {
+      await pumpShell(tester, cfg: nestedConfig(), size: const Size(400, 800));
+
+      await tester.tap(find.text('T1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('PUSH'));
+      await tester.pumpAndSettle();
+      expect(find.text('TAB1 PUSHED'), findsOneWidget);
+
+      final outerRoute =
+          ModalRoute.of(tester.element(find.byType(FirstPage)))!;
+      expect(
+        outerRoute.popDisposition,
+        RoutePopDisposition.doNotPop,
+        reason:
+            'the visible tab has a route to pop, so it must veto the app-level pop',
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      // Popped its own route, not the app.
+      expect(find.text('TAB1 PUSHED'), findsNothing);
+      expect(find.text('TAB1'), findsOneWidget);
+      expect(find.byType(FirstPage), findsOneWidget);
+    });
+
+    testWidgets('flag off leaves the widget tree unchanged', (tester) async {
+      // The promise made to the other three apps: with nestedNavigation at
+      // its default false, there must be no Navigator/NavigatorPopHandler
+      // anywhere in the tree, and no behavior change to observe.
+      await pumpShell(tester, cfg: config(), size: const Size(400, 800));
+
+      expect(find.byType(NavigatorPopHandler), findsNothing);
+      // Only the app-level Navigator from MaterialApp itself remains.
+      expect(find.byType(Navigator), findsOneWidget);
+    });
+  });
+
   group('FirstPage page state', () {
     // Regression: turning the rail on wraps bodyContent in an extra Row, which
     // moves the IndexedStack in the element tree. Without a GlobalKey Flutter
@@ -322,4 +423,43 @@ class _CounterState extends State<_Counter> {
           child: Text('count: $_n'),
         ),
       );
+}
+
+/// A tab's root page: shows [label] and can push a route onto whichever
+/// Navigator is nearest — the tab's own nested one, when nestedNavigation is
+/// on.
+class _TabRoot extends StatelessWidget {
+  const _TabRoot(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label),
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => _PushedPage('$label PUSHED'),
+                  ),
+                ),
+                child: const Text('PUSH'),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _PushedPage extends StatelessWidget {
+  const _PushedPage(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) =>
+      Scaffold(body: Center(child: Text(label)));
 }
