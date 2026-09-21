@@ -202,9 +202,34 @@
     hide: function () {
       var el = document.getElementById(id);
       if (!el) return;
+
+      // Read the real transition duration rather than assuming one. Under
+      // prefers-reduced-motion the transition is `none`, so `transitionend`
+      // never fires -- with a hardcoded fallback timer that made the loader
+      // linger after the app was already up, for precisely the users who
+      // asked for less motion. Zero duration means remove now.
+      var ms = 0;
+      try {
+        var v = getComputedStyle(el).transitionDuration || '0s';
+        // Can be a comma-separated list; the longest one governs.
+        ms = Math.max.apply(null, v.split(',').map(function (x) {
+          x = x.trim();
+          var n = parseFloat(x) || 0;
+          return x.indexOf('ms') > -1 ? n : n * 1000;
+        }));
+      } catch (e) { ms = 0; }
+
+      if (!ms) {
+        el.remove();
+        return;
+      }
+
       el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
       el.classList.add('ninja-hide');
-      setTimeout(function () { el.remove(); }, 400);
+      // Safety net only, in case transitionend is missed (interrupted
+      // transition, backgrounded tab). Derived from the real duration, not a
+      // fixed number, so it can never outlive the animation it guards.
+      setTimeout(function () { el.remove(); }, ms + 80);
     }
   };
 })();
