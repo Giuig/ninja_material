@@ -3,7 +3,7 @@ description: Shared Flutter library powering all ninja apps
 
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 1.6.5
+version: 1.6.6
 
 environment:
   # 3.4 is the floor for `web: ^1.1.0`, which lib/src/web_loader_impl.dart now
