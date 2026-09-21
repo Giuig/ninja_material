@@ -300,55 +300,62 @@ class _SettingsPageState extends State<SettingsPage> {
           // else collapses into the row the icon already needs, so the footer
           // costs roughly what that button costs and nothing more.
           //
-          // Wrap, not Row: a long app name or a large system font falls onto a
-          // second line instead of overflowing.
+          // Soft-wrapping, not a fixed Row: a long app name or a large system
+          // font falls onto a second line instead of overflowing.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              // 12 rather than 8: the gap is now the only thing separating the
-              // remaining groups, since the interpunct below lives inside a
-              // Text rather than between Wrap children.
-              spacing: 12,
-              children: [
-                // Copyright and version are ONE Text joined by an interpunct,
-                // not two children with a separator child between them. A
-                // standalone separator is a Wrap child like any other, so it
-                // can flow onto the next line by itself and leave a dot
-                // dangling at a line edge. Inside a Text it cannot.
-                //
-                // These two are the pair that actually needed it: "Ninja_material
-                // v1.6.5" read as one string. The other groups are
-                // self-evidently separate, so spacing carries them.
-                Text(
-                  "© $globalCurrentYear $globalFormattedAppName"
-                  " · v$globalVersion",
-                  style: TextStyle(fontSize: 12.0, color: footerColor),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Made with ",
-                        style: TextStyle(fontSize: 12.0, color: footerColor)),
-                    SvgPicture.string(SvgUtil.flutterSvgString,
+            // One Text.rich for the whole footer, with both icons as
+            // WidgetSpans, rather than a Wrap of separate children.
+            //
+            // Every item is now interpunct-separated, and that is exactly why
+            // this cannot be a Wrap: a separator added as its own child is a
+            // Wrap child like any other, so it can flow onto the next line by
+            // itself and strand a dot at a line edge. With four items there
+            // are three separators and three chances of that. Inside a single
+            // text flow there are none — the separators are glyphs, and the
+            // line breaks where the text tells it to.
+            //
+            // Wrapping still works: Text.rich soft-wraps on its own, so a long
+            // app name or a large system font falls onto a second line instead
+            // of overflowing, which is what the old Wrap was there for.
+            //
+            // The GitHub IconButton keeps its 48px tap target inside the
+            // WidgetSpan — that is Material's minimum and it governs the row's
+            // height either way, so nothing is traded for the inlining.
+            child: Text.rich(
+              textAlign: TextAlign.center,
+              TextSpan(
+                style: TextStyle(fontSize: 12.0, color: footerColor),
+                children: [
+                  TextSpan(
+                      text: "© $globalCurrentYear $globalFormattedAppName"),
+                  const TextSpan(text: ' · '),
+                  TextSpan(text: "v$globalVersion"),
+                  const TextSpan(text: ' · Made with '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: SvgPicture.string(SvgUtil.flutterSvgString,
                         width: 15, height: 15),
-                  ],
-                ),
-                Tooltip(
-                  message: 'GitHub',
-                  child: IconButton(
-                    onPressed: () => _launchUrl(_githubUrl),
-                    icon: SvgPicture.string(
-                      SvgUtil.githubSvgString,
-                      width: 20,
-                      height: 20,
-                      colorFilter:
-                          ColorFilter.mode(footerColor, BlendMode.srcIn),
+                  ),
+                  const TextSpan(text: ' · '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Tooltip(
+                      message: 'GitHub',
+                      child: IconButton(
+                        onPressed: () => _launchUrl(_githubUrl),
+                        icon: SvgPicture.string(
+                          SvgUtil.githubSvgString,
+                          width: 20,
+                          height: 20,
+                          colorFilter:
+                              ColorFilter.mode(footerColor, BlendMode.srcIn),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
       ],
