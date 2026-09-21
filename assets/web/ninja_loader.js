@@ -11,7 +11,7 @@
 //           data-accent-light="#4a5c92" data-accent-dark="#b3c5ff"></script>
 //
 // It must be in <head> and synchronous. A head script blocks first paint, so
-// the page's very first paint already carries the right background — no flash
+// the page's very first paint already carries the right background -- no flash
 // to correct afterwards. Loading it in <body>, or with async/defer, means the
 // browser paints default white first and this fixes it a frame later, which is
 // worse than the problem it solves.
@@ -28,7 +28,7 @@
 // prefix is `flutter.`, but every ninja app calls
 // `SharedPreferences.setPrefix('<app>.')` on web, because all apps share the
 // origin https://giuig.github.io and storage is scoped to the ORIGIN, not the
-// path. setPrefix REPLACES `flutter.`, it does not extend it — hence
+// path. setPrefix REPLACES `flutter.`, it does not extend it -- hence
 // data-prefix, which must match that app's main.dart exactly. Get it wrong and
 // the loader silently falls back to defaults rather than failing loudly.
 //
@@ -51,6 +51,19 @@
     }
   }
 
+  // Localised label. Mirrors locale_notifier.dart, which reads the stored
+  // 'locale' key and otherwise falls back to the platform locale. Strings are
+  // the ones tvninja already ships for its `loading` key, so the loader and
+  // the app say the same word rather than two translations of it.
+  var LABELS = {
+    en: 'Loading...',
+    de: 'Laden...',
+    es: 'Cargando...',
+    fr: 'Chargement...',
+    it: 'Caricamento...',
+    ja: '\u8aad\u307f\u8fbc\u307f\u4e2d...'
+  };
+
   var mode = pref('themeMode');
   var systemDark = false;
   try {
@@ -68,6 +81,14 @@
   // SEED Flutter feeds to ColorScheme.fromSeed, not the tone it finally
   // renders, so this is close rather than identical - near enough that there
   // is no visible jump at handover.
+  var lang = pref('locale');
+  if (typeof lang !== 'string' || !LABELS[lang]) {
+    // navigator.language is 'it-IT' etc.; the stored key is a bare language
+    // code, so take the primary subtag either way.
+    lang = ((navigator.language || 'en').split('-')[0] || 'en').toLowerCase();
+  }
+  var label = d.label || LABELS[lang] || LABELS.en;
+
   var argb = pref('customAccentColor');
   if (typeof argb === 'number' && isFinite(argb)) {
     accent = '#' + (argb & 0xFFFFFF).toString(16).padStart(6, '0');
@@ -83,7 +104,7 @@
     '#' + id + '.ninja-hide{opacity:0;pointer-events:none}' +
     // Shuriken: eased rather than linear rotation, so each turn reads as a
     // wind-up and release (a thrown star) instead of a machine spinning.
-    '#' + id + ' svg{width:46px;height:46px;' +
+    '#' + id + ' svg{width:72px;height:72px;' +
     'animation:ninja-rot 2.4s cubic-bezier(.6,0,.4,1) infinite}' +
     '#' + id + ' .ninja-blade{fill:' + accent + '}' +
     '#' + id + ' .ninja-hub{fill:' + bg + '}' +
@@ -105,7 +126,7 @@
       '<svg viewBox="0 0 48 48" aria-hidden="true">' +
       '<path class="ninja-blade" d="M24 2 L30 18 L46 24 L30 30 L24 46 L18 30 L2 24 L18 18 Z"/>' +
       '<circle class="ninja-hub" cx="24" cy="24" r="4.5"/></svg>' +
-      '<div class="ninja-label">' + (d.label || 'Loading…') + '</div>';
+      '<div class="ninja-label">' + label + '</div>';
     document.body.insertBefore(el, document.body.firstChild);
   }
 
@@ -116,7 +137,7 @@
   else document.addEventListener('DOMContentLoaded', build);
 
   window.ninjaLoader = {
-    resolved: { dark: dark, accent: accent, background: bg, prefix: prefix },
+    resolved: { dark: dark, accent: accent, background: bg, prefix: prefix, lang: lang, label: label },
     hide: function () {
       var el = document.getElementById(id);
       if (!el) return;
