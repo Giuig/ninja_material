@@ -1,36 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="ninja_material">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>ninja_material</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Shared loading screen. In <head> and NOT async on purpose: a head
+       script blocks first paint, so the first paint already carries the right
+       background instead of flashing white and being corrected a frame later.
+
+       NOTE THE PATH. This is the package building ITSELF, so its own assets
+       land at `assets/assets/...`. A consuming app gets the same file at
+       `assets/packages/ninja_material/assets/web/ninja_loader.js` instead --
+       copying this line verbatim into an app will 404. The app-side snippet
+       is documented at the top of ninja_loader.js.
+
+       No data-prefix here: the example app does not call
+       SharedPreferences.setPrefix, so it keeps the default `flutter.`. -->
+  <script src="assets/assets/web/ninja_loader.js"
+          data-bg-light="#f5fafb" data-bg-dark="#0e1415"
+          data-accent-light="#006874" data-accent-dark="#82d3e0"
+          data-container-light="#e9eff0" data-container-dark="#1b2122"></script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
