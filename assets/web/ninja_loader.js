@@ -7,8 +7,9 @@
 //
 //   <script src="assets/packages/ninja_material/assets/web/ninja_loader.js"
 //           data-prefix="auraninja."
-//           data-bg-light="#f9faef"     data-bg-dark="#12140e"
-//           data-accent-light="#4b662c" data-accent-dark="#b1d18a"></script>
+//           data-bg-light="#f9faef"        data-bg-dark="#12140e"
+//           data-accent-light="#4b662c"    data-accent-dark="#b1d18a"
+//           data-container-light="#eeefe4" data-container-dark="#1e201a"></script>
 //
 // It must be in <head> and synchronous. A head script blocks first paint, so
 // the page's very first paint already carries the right background -- no flash
@@ -88,6 +89,16 @@
   var primary = dark ? (d.accentDark || '#b3c5ff') : (d.accentLight || '#4a5c92');
   var secondary = primary;
   var outline = primary;
+  // Wind lines use surfaceContainer -- the same tone the navigation bar sits
+  // on. It is a background role, barely lifted off the surface, which is the
+  // point: the wind should be felt rather than read.
+  //
+  // This needs its own data-* fallback: without one a first visit would fall
+  // back to `primary` and paint the wind bright, which is the opposite of the
+  // intent. Only the first load is affected, but that is every new visitor.
+  var container = dark
+    ? (d.containerDark || d.accentDark || '#1b2122')
+    : (d.containerLight || d.accentLight || '#e9eff0');
   var exact = false;
 
   // setString stores a JSON string and shared_preferences json-encodes it
@@ -103,6 +114,7 @@
         secondary = side.s || side.p;
         bg = side.b || bg;
         outline = side.o || side.p;
+        container = side.c || side.o || side.p;
         exact = true;
       }
     } catch (e) { /* malformed: keep the data-* fallback */ }
@@ -126,7 +138,7 @@
     'animation:ninja-rot 1.6s linear infinite}' +
     '#' + id + ' .ninja-blade{fill:' + primary + '}' +
     '#' + id + ' .ninja-hub{fill:' + bg + '}' +
-    '#' + id + ' .ninja-label{color:' + primary + ';position:relative;z-index:2;' +
+    '#' + id + ' .ninja-label{color:' + secondary + ';position:relative;z-index:2;' +
     'font-size:clamp(13px,3vmin,19px);letter-spacing:.04em;opacity:.7}' +
     '@keyframes ninja-rot{to{transform:rotate(360deg)}}' +
 
@@ -135,14 +147,14 @@
     // than competing with the main thread while it parses main.dart.js.
     '#' + id + ' .ninja-fx{position:absolute;inset:0;pointer-events:none;z-index:1}' +
     '#' + id + ' .ninja-fx i{position:absolute;right:-16%;height:2px;' +
-    'border-radius:2px;background:' + outline + ';opacity:0;' +
-    'animation:ninja-gust 1.15s linear infinite}' +
+    'border-radius:2px;background:' + container + ';opacity:0;' +
+    'animation:ninja-gust 1.9s linear infinite}' +
     '#' + id + ' .ninja-fx svg{position:absolute;right:-8%;' +
     'width:clamp(11px,2.6vmin,18px);height:clamp(11px,2.6vmin,18px);' +
-    'opacity:0;animation:ninja-blow 1.7s linear infinite}' +
+    'opacity:0;animation:ninja-blow 2.8s linear infinite}' +
     '#' + id + ' .ninja-fx svg path{fill:' + secondary + '}' +
     '@keyframes ninja-gust{0%{transform:translateX(0);opacity:0}' +
-    '15%{opacity:.8}75%{opacity:.5}100%{transform:translateX(-135vw);opacity:0}}' +
+    '12%{opacity:1}80%{opacity:1}100%{transform:translateX(-135vw);opacity:0}}' +
     '@keyframes ninja-blow{0%{transform:translateX(0) rotate(0);opacity:0}' +
     '12%{opacity:.9}55%{transform:translateX(-60vw) rotate(260deg)}' +
     '100%{transform:translateX(-125vw) rotate(520deg);opacity:0}}' +
@@ -158,10 +170,10 @@
 
   // [top%, animation-delay s, width%] -- A's flat layout at E's stagger.
   var GUSTS = [
-    [18, 0, 13], [30, 0.06, 7], [44, 0.12, 11], [58, 0.18, 6],
-    [70, 0.24, 10], [82, 0.3, 5], [8, 0.36, 9]
+    [18, 0, 22], [30, 0.1, 12], [44, 0.2, 19], [58, 0.3, 10],
+    [70, 0.4, 17], [82, 0.5, 9], [8, 0.6, 15]
   ];
-  var LEAVES = [[26, 0.15], [60, 0.6], [40, 1.05], [74, 1.5]];
+  var LEAVES = [[26, 0.25], [60, 1.0], [40, 1.75], [74, 2.5]];
   var LEAF = 'M8 1 C13 4 14 10 8 15 C2 10 3 4 8 1 Z';
 
   function build() {
@@ -197,7 +209,8 @@
   window.ninjaLoader = {
     resolved: {
       dark: dark, primary: primary, secondary: secondary, outline: outline,
-      background: bg, prefix: prefix, lang: lang, label: label, exact: exact
+      background: bg, container: container, prefix: prefix, lang: lang,
+      label: label, exact: exact
     },
     hide: function () {
       var el = document.getElementById(id);

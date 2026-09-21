@@ -276,12 +276,14 @@ void _persistLoaderPalette(ColorScheme light, ColorScheme dark) {
       's': _loaderHex(light.secondary),
       'b': _loaderHex(light.surface),
       'o': _loaderHex(light.outline),
+      'c': _loaderHex(light.surfaceContainer),
     },
     'd': {
       'p': _loaderHex(dark.primary),
       's': _loaderHex(dark.secondary),
       'b': _loaderHex(dark.surface),
       'o': _loaderHex(dark.outline),
+      'c': _loaderHex(dark.surfaceContainer),
     },
   });
   if (payload == _lastLoaderPalette) return;
