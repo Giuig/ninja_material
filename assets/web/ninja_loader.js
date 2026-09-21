@@ -98,17 +98,22 @@
     'html,body{margin:0;padding:0;height:100%}' +
     'body{background:' + bg + '}' +
     '#' + id + '{position:fixed;inset:0;display:flex;flex-direction:column;' +
-    'align-items:center;justify-content:center;gap:18px;background:' + bg + ';' +
+    'align-items:center;justify-content:center;' + 'gap:clamp(10px,2.6vmin,22px);background:' + bg + ';' +
     'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
     'opacity:1;transition:opacity .25s ease-out}' +
     '#' + id + '.ninja-hide{opacity:0;pointer-events:none}' +
     // Shuriken: eased rather than linear rotation, so each turn reads as a
     // wind-up and release (a thrown star) instead of a machine spinning.
-    '#' + id + ' svg{width:72px;height:72px;' +
+    // Sized in vmin, not px, so it scales with whatever viewport it is in.
+    // In an iframe, vmin resolves against the IFRAME's own viewport, so an
+    // embedded app gets a correctly-sized star with the loader knowing
+    // nothing about being embedded. clamp keeps both ends sane: never a dot
+    // in a small frame, never enormous on a large desktop.
+    '#' + id + ' svg{width:clamp(44px,14vmin,96px);' + 'height:clamp(44px,14vmin,96px);' +
     'animation:ninja-rot 2.4s cubic-bezier(.6,0,.4,1) infinite}' +
     '#' + id + ' .ninja-blade{fill:' + accent + '}' +
     '#' + id + ' .ninja-hub{fill:' + bg + '}' +
-    '#' + id + ' .ninja-label{color:' + accent + ';font-size:13px;' +
+    '#' + id + ' .ninja-label{color:' + accent + ';' + 'font-size:clamp(11px,2.4vmin,15px);' +
     'letter-spacing:.04em;opacity:.7}' +
     '@keyframes ninja-rot{to{transform:rotate(360deg)}}' +
     '@media(prefers-reduced-motion:reduce){#' + id + ' *{animation:none!important}' +
