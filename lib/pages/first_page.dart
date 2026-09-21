@@ -344,6 +344,12 @@ class _FirstPageState extends State<FirstPage> {
           // the rail's Material off the screen edge, losing the edge-to-edge
           // surface the system bar is meant to sit on top of.
           NavigationRail(
+            // Match NavigationBar. M3 gives them different defaults -- the bar
+            // gets surfaceContainer (navigation_bar.dart:1440), the rail gets
+            // surface (navigation_rail.dart:1182) -- so the same app looked
+            // different either side of the 600px breakpoint: the rail blended
+            // into the page while the bar read as chrome.
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
             selectedIndex: _currentPageIndex,
             onDestinationSelected: (int index) {
               setState(() => _currentPageIndex = index);
