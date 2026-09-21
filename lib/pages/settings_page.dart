@@ -136,6 +136,11 @@ class _SettingsPageState extends State<SettingsPage> {
     final colorScheme = theme.colorScheme;
     final selectedLocale = globalCurrentLocale.currentLocale(context);
 
+    // Footer text and the GitHub icon share one token. They were split before
+    // — icon on onSurfaceVariant, text on onSurface — so half the row read as
+    // secondary chrome and half as primary content.
+    final footerColor = colorScheme.onSurfaceVariant;
+
     // No Scaffold of its own. This page renders inside FirstPage's Scaffold
     // body, which already supplies the background colour and a Material
     // ancestor, so the nested one just painted an identical background over
@@ -302,24 +307,30 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Wrap(
               alignment: WrapAlignment.center,
               crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
+              // 12 rather than 8: the gap is now the only thing separating the
+              // remaining groups, since the interpunct below lives inside a
+              // Text rather than between Wrap children.
+              spacing: 12,
               children: [
+                // Copyright and version are ONE Text joined by an interpunct,
+                // not two children with a separator child between them. A
+                // standalone separator is a Wrap child like any other, so it
+                // can flow onto the next line by itself and leave a dot
+                // dangling at a line edge. Inside a Text it cannot.
+                //
+                // These two are the pair that actually needed it: "Ninja_material
+                // v1.6.5" read as one string. The other groups are
+                // self-evidently separate, so spacing carries them.
                 Text(
-                  "© $globalCurrentYear $globalFormattedAppName",
-                  style:
-                      TextStyle(fontSize: 12.0, color: colorScheme.onSurface),
-                ),
-                Text(
-                  "v$globalVersion",
-                  style:
-                      TextStyle(fontSize: 12.0, color: colorScheme.onSurface),
+                  "© $globalCurrentYear $globalFormattedAppName"
+                  " · v$globalVersion",
+                  style: TextStyle(fontSize: 12.0, color: footerColor),
                 ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text("Made with ",
-                        style: TextStyle(
-                            fontSize: 12.0, color: colorScheme.onSurface)),
+                        style: TextStyle(fontSize: 12.0, color: footerColor)),
                     SvgPicture.string(SvgUtil.flutterSvgString,
                         width: 15, height: 15),
                   ],
@@ -332,8 +343,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       SvgUtil.githubSvgString,
                       width: 20,
                       height: 20,
-                      colorFilter: ColorFilter.mode(
-                          colorScheme.onSurfaceVariant, BlendMode.srcIn),
+                      colorFilter:
+                          ColorFilter.mode(footerColor, BlendMode.srcIn),
                     ),
                   ),
                 ),
