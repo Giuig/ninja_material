@@ -13,8 +13,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config/shared_config.dart';
 import 'pages/first_page.dart';
-import 'src/web_loader.dart'
-    if (dart.library.html) 'src/web_loader_impl.dart';
 
 Future<void> runNinjaApp({
   required Color defaultSeedColor,
@@ -26,8 +24,6 @@ Future<void> runNinjaApp({
   bool showDebugBanner = kDebugMode,
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (kIsWeb) insertWebSpinner();
 
   setGlobalAppLocalizationDelegate(specificLocalizationDelegate);
 
