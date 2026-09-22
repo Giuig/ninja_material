@@ -123,11 +123,12 @@
   var css =
     'html,body{margin:0;padding:0;height:100%}' +
     'body{background:' + bg + '}' +
-    '#' + id + '{position:fixed;inset:0;display:flex;flex-direction:column;' +
+    '#' + id + '{position:fixed;inset:0;z-index:2147483647;' +
+    'display:flex;flex-direction:column;' +
     'align-items:center;justify-content:center;overflow:hidden;' +
     'gap:clamp(12px,3vmin,26px);background:' + bg + ';' +
     'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
-    'opacity:1;transition:opacity .25s ease-out}' +
+    'opacity:1;transition:opacity .45s cubic-bezier(.4,0,.2,1)}' +
     '#' + id + '.ninja-hide{opacity:0;pointer-events:none}' +
 
     // Sized in vmin so it scales with whatever viewport it is in. Inside an
@@ -206,7 +207,43 @@
   if (document.body) build();
   else document.addEventListener('DOMContentLoaded', build);
 
+  var armed = false;
+
   window.ninjaLoader = {
+    // Called by flutter_bootstrap.js once the engine is initialised, INSTEAD of
+    // hide(). Waiting for the first painted frame is what makes the handover a
+    // cross-fade: the app is already on screen underneath, and the loader
+    // dissolves off it. Calling hide() before runApp() faded the loader out
+    // over a bare background, and Flutter then painted over the top.
+    //
+    // Three signals, first one wins, because none is guaranteed on its own:
+    //   1. flutter-first-frame -- Flutter's own event, the precise one
+    //   2. the view appearing + two rAFs -- covers a build where 1 never fires
+    //   3. a hard cap -- so a crashed boot cannot leave the loader up forever
+    dismissOnFirstFrame: function () {
+      if (armed) return;
+      armed = true;
+      var self = this;
+      var done = false;
+      function go() {
+        if (done) return;
+        done = true;
+        try { mo.disconnect(); } catch (e) { /* never observed */ }
+        self.hide();
+      }
+      window.addEventListener('flutter-first-frame', go, { once: true });
+      var mo = new MutationObserver(function () {
+        if (document.querySelector('flutter-view, flt-glass-pane')) {
+          try { mo.disconnect(); } catch (e) { /* already gone */ }
+          requestAnimationFrame(function () { requestAnimationFrame(go); });
+        }
+      });
+      try {
+        mo.observe(document.documentElement, { childList: true, subtree: true });
+      } catch (e) { /* no observer: the event or the cap will do it */ }
+      setTimeout(go, 10000);
+    },
+
     resolved: {
       dark: dark, primary: primary, secondary: secondary, outline: outline,
       background: bg, container: container, prefix: prefix, lang: lang,
