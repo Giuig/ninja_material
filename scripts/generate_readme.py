@@ -11,6 +11,7 @@ Requires: PyYAML  (pip install pyyaml)
 
 import sys
 import os
+from urllib.parse import quote
 
 try:
     import yaml
@@ -56,6 +57,46 @@ def load_config(repo_dir: str) -> dict:
 def load_template() -> str:
     with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
         return f.read()
+
+
+def build_badges(config: dict) -> str:
+    # Opt-in per app via `badges:` in readme_config.yml, because the same row is
+    # not right everywhere: a `stars` badge only helps once the count is worth
+    # showing, and `izzyondroid` needs an actual listing. The GPLv3 badge is not
+    # here — it already lives in the License section and should not be doubled.
+    kinds = config.get("badges", [])
+    if not kinds:
+        return ""
+
+    slug = config["slug"]
+    github = config["github"]
+    repo_path = github.replace("https://github.com/", "")
+
+    badges = []
+    for kind in kinds:
+        if kind == "release":
+            badges.append(
+                f"[![Release](https://img.shields.io/github/v/release/{repo_path})]"
+                f"({github}/releases/latest)"
+            )
+        elif kind == "izzyondroid":
+            package = config.get("izzyondroid_package", f"io.github.giuig.{slug}")
+            endpoint = quote(
+                f"https://apt.izzysoft.de/fdroid/api/v1/shield/{package}", safe=""
+            )
+            badges.append(
+                f"[![IzzyOnDroid](https://img.shields.io/endpoint?url={endpoint})]"
+                f"(https://apt.izzysoft.de/fdroid/index/apk/{package})"
+            )
+        elif kind == "stars":
+            badges.append(
+                f"[![Stars](https://img.shields.io/github/stars/{repo_path})]"
+                f"({github}/stargazers)"
+            )
+        else:
+            raise ValueError(f"Unknown badge {kind!r} in {slug}/readme_config.yml")
+
+    return "\n" + "\n".join(badges) + "\n"
 
 
 def build_features(features: list) -> str:
@@ -140,6 +181,7 @@ def build_izzyondroid_section(config: dict) -> str:
 def generate(config: dict, template: str) -> str:
     return template.format(
         name=config["name"],
+        badges=build_badges(config),
         description=config["description"],
         features=build_features(config["features"]),
         web_section=build_web_section(config),

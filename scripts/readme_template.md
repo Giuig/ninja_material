@@ -1,5 +1,5 @@
 # {name}
-
+{badges}
 {description}
 
 ## Features

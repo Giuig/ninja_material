@@ -1,5 +1,7 @@
 # ninja_material
 
+[![Release](https://img.shields.io/github/v/release/Giuig/ninja_material)](https://github.com/Giuig/ninja_material/releases/latest)
+
 Shared Flutter library powering all ninja apps. Provides Material You theming, localization, navigation scaffolding, and CI/CD workflows.
 
 

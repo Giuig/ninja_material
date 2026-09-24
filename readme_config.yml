@@ -2,6 +2,8 @@ slug: ninja_material
 name: ninja_material
 github: https://github.com/Giuig/ninja_material
 is_library: true
+badges:
+  - release
 description: >
   Shared Flutter library powering all ninja apps. Provides Material You theming, localization, navigation scaffolding, and CI/CD workflows.
 build_commands: |
