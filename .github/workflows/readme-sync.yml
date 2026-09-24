@@ -1,4 +1,4 @@
-name: README Sync
+name: Ninja README Sync
 
 # Shared README check / regeneration for every ninja app, called from a thin shim
 # in each repo — the same pattern as app-ci.yml / build-app.yml /
