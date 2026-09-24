@@ -86,7 +86,15 @@ jobs:
 
       - name: Build web
         if: inputs.build-web
-        run: flutter build web
+        # --no-tree-shake-icons because that is what this fleet actually ships:
+        # web-deploy.yml and build-app.yml both pass it. Without it this gate is
+        # STRICTER than every release path and fails on code that ships fine.
+        # decisioninja is the case that proved it — lib/pages/ninja_page.dart
+        # rebuilds IconData from a stored codePoint so a user's chosen icon can
+        # survive a restart, and the icon tree-shaker rejects any non-constant
+        # IconData outright. That is not fixable without dropping the feature,
+        # which is presumably why both release workflows already disable it.
+        run: flutter build web --no-tree-shake-icons
 
 # No `dart format --set-exit-if-changed` step: no app in the fleet is
 # formatter-clean, so it would fail every PR everywhere from the first run. That
