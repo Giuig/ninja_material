@@ -1,0 +1,126 @@
+name: README Sync
+
+# Shared README check / regeneration for every ninja app, called from a thin shim
+# in each repo — the same pattern as app-ci.yml / build-app.yml /
+# version-bump.yml / web-deploy.yml.
+#
+# Naming follows the convention already in this folder: a hyphen means "shared,
+# workflow_call"; an underscore (version_bump.yml, readme_sync.yml) means "this
+# repo's own trigger". Do not add pull_request or workflow_dispatch triggers
+# here — the callers own those.
+#
+# Why this exists: scripts/generate_readme.py was the only shared step in this
+# fleet that ran on a developer machine rather than in CI, and it is the only one
+# that fell out of use. Written 2026-04-04, next run 2026-09-24 — by which point
+# four readme_config.yml files had drifted from their READMEs, and a blind run
+# would have reverted real README content. Running --check on every pull request
+# surfaces that drift the day it is introduced, while the README is still the
+# thing being edited, instead of months later when the generator is next run.
+#
+# NOT here on purpose: fanning out to the apps when the shared template changes.
+# That needs cross-repo repository_dispatch, which needs a PAT — the existing
+# peter-evans/repository-dispatch@v3 steps in version-bump.yml pass no `token:`
+# or `repository:`, so they are self-dispatches on GITHUB_TOKEN and are not a
+# precedent for it. A long-lived repo-scoped secret across four public repos is
+# not worth it for a template that changed once in six months; running the
+# workflow_dispatch once per app covers it.
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        description: >
+          App name. Doubles as the checkout directory, because the generator
+          resolves --repo against the directory sitting next to ninja_material.
+          Must match the app's directory name in the local side-by-side layout
+          and the `slug` in its readme_config.yml.
+        required: true
+        type: string
+      ninja-material-ref:
+        description: >
+          Which ninja_material ref supplies the generator and the shared
+          template. Defaults to main, matching the @main the shims already pin,
+          so an app's README is checked against the published template rather
+          than whatever is in flight elsewhere. Ignored when the caller IS
+          ninja_material: that repo is checked against its own pull request,
+          which is the whole point of reviewing a template change.
+        required: false
+        type: string
+        default: 'main'
+      commit-message:
+        description: >
+          Subject for the regeneration commit on the workflow_dispatch path.
+          Defaults to a plain imperative subject, which is auraninja's and
+          ninja_material's style; tvninja and decisioninja use Conventional
+          Commits and pass a `docs:` subject from their shim instead.
+        required: false
+        type: string
+        default: 'Regenerate README from readme_config.yml'
+      python-version:
+        description: 'Python used to run scripts/generate_readme.py.'
+        required: false
+        type: string
+        default: '3.12'
+
+jobs:
+  readme:
+    name: ${{ inputs.app-name }} — README
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed only by the workflow_dispatch path, which commits the regenerated
+      # README. The pull_request path writes nothing at all, and on a pull
+      # request from a fork GITHUB_TOKEN is read-only regardless.
+      contents: write
+    steps:
+      # Both repos land side by side under $GITHUB_WORKSPACE so the layout
+      # matches a developer machine exactly. The generator derives its search
+      # root from its own location (REPOS_DIR is two levels above scripts/), so
+      # it needs no path input — only --repo.
+      - name: Check out ${{ inputs.app-name }}
+        uses: actions/checkout@v4
+        with:
+          path: ${{ inputs.app-name }}
+
+      - name: Check out ninja_material
+        # Skipped when ninja_material is the caller: it is already checked out
+        # above at its own ref, and a second checkout would collide on path.
+        if: inputs.app-name != 'ninja_material'
+        uses: actions/checkout@v4
+        with:
+          repository: Giuig/ninja_material
+          ref: ${{ inputs.ninja-material-ref }}
+          path: ninja_material
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Check README is in sync
+        # Everything except an explicit regeneration. Written as "not dispatch"
+        # rather than "== pull_request" on purpose: a shim that grows another
+        # trigger (a push to main, say) then still gets checked, instead of
+        # producing a job where both steps skip and the run reports green
+        # without having checked anything.
+        if: github.event_name != 'workflow_dispatch'
+        run: >
+          python ninja_material/scripts/generate_readme.py
+          --repo ${{ inputs.app-name }} --check
+
+      - name: Regenerate and commit
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: ${{ inputs.app-name }}
+        run: |
+          python ../ninja_material/scripts/generate_readme.py --repo ${{ inputs.app-name }}
+          if git diff --quiet -- README.md; then
+            echo "README.md was already in sync; nothing to commit."
+            exit 0
+          fi
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add README.md
+          git commit -m "${{ inputs.commit-message }}"
+          # HEAD:<branch> rather than a bare `git push`, so this works whether
+          # actions/checkout left us on the branch or on a detached HEAD.
+          git push origin HEAD:${{ github.ref_name }}

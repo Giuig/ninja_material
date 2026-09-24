@@ -1,0 +1,29 @@
+name: README Sync
+
+# This package's own trigger. The generator and the shared template live in
+# readme-sync.yml alongside app-ci.yml / build-app.yml / version-bump.yml, so the
+# fleet has one definition of "is this README in sync" rather than one per repo.
+#
+# The hyphen/underscore split is the same as app-ci.yml vs ci.yml and
+# version-bump.yml vs version_bump.yml: readme-sync.yml is the shared
+# workflow_call, this file is the trigger.
+#
+# ninja_material has a readme_config.yml of its own, so it is checked like any
+# app. It is also the only repo where the check runs against the template in the
+# pull request rather than the one on main — which is what makes a change to
+# scripts/readme_template.md reviewable here before the apps pick it up.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  readme:
+    uses: ./.github/workflows/readme-sync.yml
+    with:
+      app-name: ninja_material
