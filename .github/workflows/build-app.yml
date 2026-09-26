@@ -49,6 +49,12 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Patch vendored packages (reproducible builds)
+        run: |
+          if [ -f scripts/patch_soloud.sh ]; then
+            bash scripts/patch_soloud.sh
+          fi
+
       - name: Setup release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
