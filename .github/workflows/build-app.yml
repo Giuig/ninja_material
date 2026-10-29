@@ -37,6 +37,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Pin the JDK: ubuntu-latest moved to 26.04, whose default Java 25 is newer
+      # than the Gradle the apps use supports ("Unsupported class file major
+      # version 69"), which failed tvninja 1.7.0's build. 17 is what the
+      # 24.04 image defaulted to and the apps' jvmTarget, so APKs stay
+      # reproducible against earlier releases.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.5'
