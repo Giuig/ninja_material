@@ -61,3 +61,4 @@ extra_sections:
       - `build-app.yml` — builds universal + split APKs and creates a GitHub release
       - `version-bump.yml` — auto-tags and triggers builds on `pubspec.yaml` changes
       - `web-deploy.yml` — deploys to GitHub Pages
+      - `android-e2e.yml` — runs an app's `integration_test` files on an Android emulator (API 34); the app's own trigger decides when, because a run takes 13-16 minutes
