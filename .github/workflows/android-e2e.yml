@@ -1,0 +1,223 @@
+name: Ninja Android E2E
+
+# Shared emulator test runner for the ninja apps, called from a thin shim in each repo
+# (the same pattern as app-ci.yml / build-app.yml). It builds the app's debug APK, boots an
+# Android emulator, and runs the app's integration_test files, one `flutter test` process
+# per file.
+#
+# Naming follows the convention already in this folder: a hyphen means "shared,
+# workflow_call"; an underscore (android_e2e.yml in an app repo) means "this repo's own
+# trigger". Do not add a trigger here: the callers own theirs. The cost is the reason, since
+# a run takes 13-16 minutes, so an app should start it only on dispatch, on a labelled pull
+# request, or on a release tag, never on every pull request.
+#
+# What the job runs, and from where. The job checks out this repository a second time, at
+# the exact commit the caller referenced (`job.workflow_sha`, the commit of THIS workflow
+# file, not of the calling workflow), into `.ninja-material-ci/`, and runs
+# scripts/ci/run_android_e2e.sh and scripts/ci/loop_stream.py from there. So a caller
+# pinned to `@main` gets main's scripts, and one pinned to a branch or tag gets that
+# branch's or tag's, and the YAML and the scripts can never drift apart.
+#
+# Optional hook in the app: if the app has an executable scripts/ci/e2e_hook.sh, the runner
+# starts it in the background before each test file (`$1` = the file name; the environment
+# carries OUT, DEVICE and PKG) and waits for it after the file finishes. The hook's exit
+# status gates the job exactly like a test's. Use it for checks that look at the device
+# while a test holds the app in some state, such as `dumpsys` assertions. A hook may write
+# $OUT/summary_extra.md, which is appended to the step summary.
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        description: 'App name, used only to label the run'
+        required: true
+        type: string
+      package:
+        description: >
+          The app's Android application id (for example io.github.giuig.auraninja). The
+          runner installs the APK with `adb install -g`, samples the package's state, and
+          scans logcat for crashes and ANRs of this package.
+        required: true
+        type: string
+      e2e-files:
+        description: >
+          Space-separated integration_test file names (relative to integration_test/).
+          Each one gets its own `flutter test` process, because a plugin that may be
+          initialised only once per process (audio_service, for one) would otherwise
+          fail on the second file. A file that exits 0 but never prints "All tests
+          passed" counts as a failure, so a file that ran no test cannot pass.
+        required: true
+        type: string
+      informational-files:
+        description: >
+          Space-separated integration_test files that run AFTER e2e-files and are only
+          reported in the summary, never failing the job. For tests that depend on
+          something outside the app's control, such as a third-party station.
+        required: false
+        type: string
+        default: ''
+      flutter-version:
+        description: >
+          Flutter SDK version. Defaults to the fleet toolchain, the same default as
+          app-ci.yml, so a run is reproducible months later and an SDK release cannot turn
+          every app red on a day nobody changed anything.
+        required: false
+        type: string
+        default: '3.41.5'
+      api-level:
+        description: >
+          Android API level of the emulator image (google_apis, x86_64). 34 is Android 14,
+          which is the first release line past the Android 13 changes to media
+          notifications and notification permission.
+        required: false
+        type: string
+        default: '34'
+      pre-build:
+        description: >
+          Optional shell command run after `flutter pub get` and before the APK build, from
+          the app's root. For an app that must patch a vendored package first (auraninja:
+          `bash scripts/patch_soloud.sh`).
+        required: false
+        type: string
+        default: ''
+      local-stream:
+        description: >
+          Start scripts/ci/loop_stream.py on the runner before the tests: an endless MP3
+          stream standing in for a live station. The emulator reaches it as
+          http://10.0.2.2:8099/stream (and /dead is a 404, the negative control). Its
+          request log goes to the artifact, so a run can show that the app really
+          connected.
+        required: false
+        type: boolean
+        default: false
+      emulator-audio:
+        description: >
+          Emulator audio option: a = the default, b = QEMU_AUDIO_DRV=none, c = -noaudio.
+          auraninja's spike showed all three pass; the default is the first that passed
+          twice in a row. Change it only if an app's audio engine fails to initialise on
+          the CI emulator.
+        required: false
+        type: string
+        default: 'a'
+      timeout-minutes:
+        description: 'Job timeout. A normal run takes 13-16 minutes.'
+        required: false
+        type: number
+        default: 45
+      ninja-material-ref:
+        description: >
+          Escape hatch. Normally empty, and the scripts come from the commit this workflow
+          was called at (see the header). If `job.workflow_sha` is ever empty in a run, the
+          checkout falls back to `main` rather than to the caller's own repository. Set
+          this to pin a ref by hand.
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: ${{ inputs.app-name }} — emulator (API ${{ inputs.api-level }})
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    env:
+      # Read by scripts/ci/run_android_e2e.sh. Inputs go through env, not interpolated
+      # into the script text, so a value with a quote or a `$` cannot change what runs.
+      E2E_PACKAGE: ${{ inputs.package }}
+      E2E_FILES: ${{ inputs.e2e-files }}
+      E2E_INFORMATIONAL_FILES: ${{ inputs.informational-files }}
+      E2E_LOCAL_STREAM: ${{ inputs.local-stream }}
+      E2E_TOOLS_DIR: .ninja-material-ci/scripts/ci
+      AUDIO: ${{ inputs.emulator-audio }}
+      APP_NAME: ${{ inputs.app-name }}
+      API_LEVEL: ${{ inputs.api-level }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The scripts, from the same commit as this workflow file. See the header.
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository || 'Giuig/ninja_material' }}
+          ref: ${{ inputs.ninja-material-ref || job.workflow_sha || 'main' }}
+          path: .ninja-material-ci
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Pinned like build-app.yml: the runner image's default Java moves under us.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ inputs.flutter-version }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Pre-build
+        if: inputs.pre-build != ''
+        run: ${{ inputs.pre-build }}
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # Built before the emulator boots so the native x86_64 build does not run against the
+      # emulator's clock; the runner installs it with `adb install -g` to keep the
+      # notification permission.
+      - name: Build debug APK
+        env:
+          GRADLE_OPTS: '-Xmx3G'
+        run: flutter build apk --debug --target-platform android-x64
+
+      - name: Emulator options for audio ${{ env.AUDIO }}
+        id: audio
+        run: |
+          base='-no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim'
+          case "$AUDIO" in
+            a) opts="$base" ;;
+            b) opts="$base"; echo 'QEMU_AUDIO_DRV=none' >> "$GITHUB_ENV" ;;
+            c) opts="$base -noaudio" ;;
+            *) echo "unknown audio option: $AUDIO"; exit 1 ;;
+          esac
+          echo "options=$opts" >> "$GITHUB_OUTPUT"
+          echo "emulator options: $opts"
+
+      - name: Emulator tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ inputs.api-level }}
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: ${{ steps.audio.outputs.options }}
+          script: bash .ninja-material-ci/scripts/ci/run_android_e2e.sh
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### $APP_NAME: Android E2E, API $API_LEVEL, audio option $AUDIO"
+            if [ -f e2e-out/summary.md ]; then cat e2e-out/summary.md; else echo "no summary (the emulator step did not reach the script)"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-out
+          path: e2e-out/
+          if-no-files-found: warn
