@@ -23,7 +23,9 @@ name: Ninja Android E2E
 # carries OUT, DEVICE and PKG) and waits for it after the file finishes. The hook's exit
 # status gates the job exactly like a test's. Use it for checks that look at the device
 # while a test holds the app in some state, such as `dumpsys` assertions. A hook may write
-# $OUT/summary_extra.md, which is appended to the step summary.
+# $OUT/summary_extra.md, which is appended to the step summary. The hook also runs around
+# each `informational-files` file, with the same grace period, but there its status is only
+# reported ("informational: <file> hook exit=N (not gating)") and never fails the job.
 on:
   workflow_call:
     inputs:
@@ -51,7 +53,10 @@ on:
         description: >
           Space-separated integration_test files that run AFTER e2e-files and are only
           reported in the summary, never failing the job. For tests that depend on
-          something outside the app's control, such as a third-party station.
+          something outside the app's control, such as a third-party station. The app's
+          scripts/ci/e2e_hook.sh, if any, runs around these files too, and its result is
+          reported but never gating. A hook that never finishes costs up to E2E_HOOK_GRACE
+          (60 s) per file, so a hook written for one file should branch on "$1".
         required: false
         type: string
         default: ''
