@@ -8,7 +8,8 @@
 #   E2E_FILES               required. Space-separated integration_test file names, one
 #                           `flutter test` process each (a plugin that may initialise only
 #                           once per process would fail on the second file otherwise).
-#   E2E_INFORMATIONAL_FILES optional. Run after E2E_FILES in their own calls; the result is
+#   E2E_INFORMATIONAL_FILES optional. Run after E2E_FILES in their own calls, through the same
+#                           hook path as E2E_FILES; the test result and the hook result are
 #                           reported, never gating.
 #   E2E_LOCAL_STREAM        "true" starts loop_stream.py (the emulator reaches it as
 #                           10.0.2.2:8099).
@@ -19,9 +20,13 @@
 #
 # App hook: if scripts/ci/e2e_hook.sh exists in the app and is executable, it is started
 # in the background before each test file as `e2e_hook.sh <file name>`, with OUT, DEVICE,
-# PKG and LOGCAT exported, and waited for after the file finishes. Its exit status gates the
-# job like a test's, and so does running past E2E_HOOK_GRACE. It may write
-# $OUT/summary_extra.md, which is appended to the summary.
+# PKG and LOGCAT exported, and waited for after the file finishes. For an E2E_FILES file its
+# exit status gates the job like a test's, and so does running past E2E_HOOK_GRACE. For an
+# E2E_INFORMATIONAL_FILES file the hook runs the same way (same grace) but its status is only
+# reported, as "informational: <file> hook exit=N (not gating)". A hook may write
+# $OUT/summary_extra.md, which is appended to the summary; what a hook writes while an
+# informational file runs is kept apart (summary_extra_informational_<file>.md) so it cannot
+# replace the gating notes.
 #
 # Exit codes are captured without pipes, and every file runs before the script reports,
 # so one failure does not hide the others. Output goes to e2e-out/ (uploaded by the
@@ -96,16 +101,23 @@ fi
 
 # Runs one test file, and the app's hook around it if there is one. Sets file_status
 # (the flutter test exit code) and file_hook_status ("" when there was no hook).
+# $2 is "gating" (default) or "informational"; the only difference here is that a hook
+# that is not executable fails the job for a gating file and is only noted for an
+# informational one.
 run_file() {
-  local f=$1 hook_pid="" i
+  local f=$1 mode=${2:-gating} hook_pid="" i
   file_status=0
   file_hook_status=""
   if [ -x "$HOOK" ]; then
     "$HOOK" "$f" > "$OUT/hook_$f.txt" 2>&1 &
     hook_pid=$!
   elif [ -e "$HOOK" ]; then
-    echo "$HOOK exists but is not executable, so it was not run" >> "$OUT/status.txt"
-    failed=1
+    if [ "$mode" = "informational" ]; then
+      echo "informational: $f: $HOOK exists but is not executable, so it was not run (not gating)" >> "$OUT/informational.txt"
+    else
+      echo "$HOOK exists but is not executable, so it was not run" >> "$OUT/status.txt"
+      failed=1
+    fi
   fi
   flutter test "integration_test/$f" -d "$DEVICE" --reporter expanded > "$OUT/$f.txt" 2>&1 || file_status=$?
   cat "$OUT/$f.txt"
@@ -143,16 +155,37 @@ for f in $FILES; do
   fi
 done
 
-# Informational files: the result goes to the summary and never fails the job.
+# Informational files: the result goes to the summary and never fails the job. They run
+# through run_file like a gating file, so the app's hook runs around them too; its status is
+# reported and, like the test's, never touches $failed.
 : > "$OUT/informational.txt"
 for f in $INFORMATIONAL_FILES; do
-  s=0
-  flutter test "integration_test/$f" -d "$DEVICE" --reporter expanded > "$OUT/$f.txt" 2>&1 || s=$?
-  cat "$OUT/$f.txt"
+  # An informational hook may write summary_extra.md like any hook; keep what a gating
+  # hook left there and file the informational hook's notes under its own name.
+  extra_had=0
+  if [ -f "$OUT/summary_extra.md" ]; then
+    extra_had=1
+    cp "$OUT/summary_extra.md" "$OUT/summary_extra.before"
+  fi
+  run_file "$f" informational
+  s=$file_status
   if [ "$s" -eq 0 ] && grep -q 'All tests passed' "$OUT/$f.txt"; then
     echo "$f: passed (informational, not gating)" >> "$OUT/informational.txt"
   else
     echo "$f: FAILED exit=$s (informational, not gating)" >> "$OUT/informational.txt"
+  fi
+  if [ -n "$file_hook_status" ]; then
+    echo "informational: $f hook exit=$file_hook_status (not gating)" | tee -a "$OUT/informational.txt"
+  fi
+  if [ -f "$OUT/summary_extra.md" ]; then
+    if [ "$extra_had" -eq 1 ] && cmp -s "$OUT/summary_extra.md" "$OUT/summary_extra.before"; then
+      :
+    else
+      mv "$OUT/summary_extra.md" "$OUT/summary_extra_informational_$f.md"
+    fi
+  fi
+  if [ "$extra_had" -eq 1 ]; then
+    mv "$OUT/summary_extra.before" "$OUT/summary_extra.md"
   fi
 done
 
@@ -200,6 +233,12 @@ grep -h 'E2E_METRIC' "$OUT"/*_test.dart.txt > "$OUT/metrics.txt" 2>&1 || true
     echo
     cat "$OUT/summary_extra.md"
   fi
+  for x in "$OUT"/summary_extra_informational_*.md; do
+    [ -s "$x" ] || continue
+    echo
+    echo "informational hook notes, $(basename "$x") (not gating):"
+    cat "$x"
+  done
 } > "$OUT/summary.md"
 
 exit "$failed"
