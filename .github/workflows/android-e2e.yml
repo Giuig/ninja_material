@@ -55,7 +55,8 @@ on:
           reported in the summary, never failing the job. For tests that depend on
           something outside the app's control, such as a third-party station. The app's
           scripts/ci/e2e_hook.sh, if any, runs around these files too, and its result is
-          reported but never gating.
+          reported but never gating. A hook that never finishes costs up to E2E_HOOK_GRACE
+          (60 s) per file, so a hook written for one file should branch on "$1".
         required: false
         type: string
         default: ''
